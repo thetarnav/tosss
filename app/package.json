@@ -1,0 +1,34 @@
+{
+  "name": "tosss-app",
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "vite --host",
+    "build": "vue-tsc --noEmit && vite build",
+    "serve": "vite preview"
+  },
+  "dependencies": {
+    "@vueuse/core": "^5.2.0",
+    "copy-to-clipboard-ultralight": "^1.0.12",
+    "socket.io-client": "^4.1.3",
+    "vue": "^3.1.5",
+    "vue-global-api": "^0.4.1",
+    "vue-router": "^4.0.10"
+  },
+  "devDependencies": {
+    "@types/node": "^16.4.11",
+    "@vitejs/plugin-vue": "^1.3.0",
+    "@vue/compiler-sfc": "^3.0.5",
+    "autoprefixer": "^10.3.1",
+    "postcss": "^8.3.6",
+    "postcss-advanced-variables": "^3.0.1",
+    "postcss-map-get": "^0.3.0",
+    "postcss-mixins": "^8.1.0",
+    "postcss-nested": "^5.0.6",
+    "postcss-scss": "^4.0.0",
+    "postcss-sort-media-queries": "^3.11.12",
+    "tailwindcss": "^2.2.7",
+    "typescript": "^4.3.2",
+    "vite": "^2.4.4",
+    "vue-tsc": "^0.2.2"
+  }
+}
