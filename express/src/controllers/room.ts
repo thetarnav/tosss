@@ -6,7 +6,7 @@ export default class RoomController {
 	readonly users: Record<string, Player> = {}
 
 	constructor(user: Player) {
-		this.roomID = nanoid()
+		this.roomID = nanoid(10)
 		this.join(user)
 	}
 
