@@ -3,6 +3,9 @@ import { nanoid } from 'nanoid'
 import { io } from '..'
 import Player from './Player'
 
+/**
+ * One instance per socket room created
+ */
 export default class RoomController {
 	static rooms: Record<string, RoomController> = {}
 	readonly roomID: string

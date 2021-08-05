@@ -6,7 +6,7 @@ export default function handleConnection(socket: Socket) {
 		player = new Player(socket)
 
 	console.log('New connection', id)
-	socket.emit('message', 'Connected!')
+	socket.emit('message', 'Connected to the server')
 
 	socket.on('create_room', () => {
 		const roomID = player.createRoom()

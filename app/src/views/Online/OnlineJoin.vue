@@ -31,10 +31,7 @@ onMounted(async () => {
 
 <template>
 	<TypeUsername v-model="username" />
-	<div v-if="joinedRoom" class="play-group">
-		<p>ROOM ID: {{ roomID }}</p>
-		<button>Play</button>
-	</div>
+	<button>Play</button>
 </template>
 
 <style lang="postcss"></style>

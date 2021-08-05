@@ -6,8 +6,9 @@ import { useDebounceFn } from '@vueuse/core'
 import { JoiningRole, PlayerRole } from '@common/player'
 import router from '@/router/router'
 
+export const messages = ref<string[]>([])
+
 interface State {
-	messages: string[]
 	username: string
 	link: string | undefined
 	roomID: string | undefined
@@ -15,7 +16,6 @@ interface State {
 }
 
 const initialState: State = {
-	messages: [],
 	username: 'Player',
 	link: undefined,
 	roomID: undefined,
@@ -33,7 +33,7 @@ export default class OnlineRoom {
 
 		this.socket.on('message', message => OnlineRoom.addMessage(message))
 
-		this.socket.on('room_closed', () => this.roomClosed())
+		this.socket.on('room_closed', () => this.clearRoom())
 	}
 
 	static get instance(): OnlineRoom {
@@ -55,8 +55,13 @@ export default class OnlineRoom {
 			OnlineRoom.instance.socket.connect()
 	}
 
+	static disconnect() {
+		this.instance.socket.disconnect()
+		this.instance.clearRoom(false)
+	}
+
 	static addMessage(message: string) {
-		OnlineRoom.instance._state.messages.push(message)
+		messages.value.push(message)
 	}
 
 	rename(username: string) {
@@ -136,10 +141,10 @@ export default class OnlineRoom {
 		})
 	}
 
-	private roomClosed() {
+	private clearRoom(redirect = true) {
 		this.mutate('roomID', undefined)
 		this.mutate('link', undefined)
 		this.mutate('role', undefined)
-		router.push('/')
+		redirect && router.push('/')
 	}
 }

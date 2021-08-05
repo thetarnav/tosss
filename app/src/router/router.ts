@@ -3,14 +3,32 @@ import { createRouter, createWebHistory } from 'vue-router'
 const routes = [
 	{ path: '/', name: 'Home', component: () => import('@/views/Home.vue') },
 	{
-		path: '/online',
-		name: 'Online',
-		component: () => import('@/views/OnlineCreate.vue'),
+		// not-found
+		path: '/:pathMatch(.*)*',
+		redirect: '/',
 	},
 	{
-		path: '/join/:roomID',
-		name: 'Join',
-		component: () => import('@/views/OnlineJoin.vue'),
+		path: '/online',
+		name: 'Online',
+		component: () => import('@/views/Online/index.vue'),
+		redirect: { name: 'Create' },
+		children: [
+			{
+				path: '/create',
+				name: 'Create',
+				component: () => import('@/views/Online/OnlineCreate.vue'),
+			},
+			{
+				path: '/join/:roomID',
+				name: 'Join',
+				component: () => import('@/views/Online/OnlineJoin.vue'),
+			},
+		],
+	},
+	{
+		path: '/board',
+		name: 'Board',
+		component: () => import('@/views/Board.vue'),
 	},
 ]
 

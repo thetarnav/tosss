@@ -29,7 +29,7 @@ export default class Player {
 		const room = new RoomController(this)
 		this.room = room
 		this.socket.join(room.roomID)
-		this.socket.emit('message', `Room ${room.roomID} was created!`)
+		this.socket.emit('message', `Online Room ${room.roomID} created!`)
 		this.role = 'creator'
 		return room.roomID
 	}

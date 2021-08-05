@@ -14,10 +14,14 @@ const username = computed({
 
 <template>
 	<div class="type-username-form">
-		<p>What's your name?</p>
+		<p>What will be your name?</p>
 		<input type="text" v-model="username" />
 		<p class="form-warning"></p>
 	</div>
 </template>
 
-<style lang="postcss"></style>
+<style lang="postcss">
+.type-username-form {
+	@apply space-y-2;
+}
+</style>
