@@ -8,7 +8,9 @@
 </template>
 
 <script lang="ts" setup>
-import { messages } from '@/modules/socket'
+import Singleton from '@/store/onlineRoom'
+
+const { messages } = Singleton.instance.refs
 </script>
 
 <style lang="postcss">

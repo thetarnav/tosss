@@ -5,7 +5,12 @@ const routes = [
 	{
 		path: '/online',
 		name: 'Online',
-		component: () => import('@/views/Online.vue'),
+		component: () => import('@/views/OnlineCreate.vue'),
+	},
+	{
+		path: '/join/:roomID',
+		name: 'Join',
+		component: () => import('@/views/OnlineJoin.vue'),
 	},
 ]
 
