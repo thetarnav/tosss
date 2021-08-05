@@ -1,10 +1,12 @@
 import { Socket } from '@/types/socket'
-import RoomController from './room'
+import RoomController from './RoomController'
+import { JoiningRole, PlayerRole } from '@common/player'
 
 export default class Player {
 	readonly id: string
 	name: string = 'Player'
 	room?: RoomController
+	role?: PlayerRole
 
 	constructor(private socket: Socket) {
 		this.id = socket.id
@@ -16,9 +18,10 @@ export default class Player {
 
 	leaveRoom() {
 		if (!this.room) return
-		this.socket.leave(this.room.roomID)
-		this.room.leave(this.id)
+		const { room } = this
 		this.room = undefined
+		this.socket.leave(room.roomID)
+		room.leave(this)
 	}
 
 	createRoom(): string {
@@ -27,15 +30,19 @@ export default class Player {
 		this.room = room
 		this.socket.join(room.roomID)
 		this.socket.emit('message', `Room ${room.roomID} was created!`)
+		this.role = 'creator'
 		return room.roomID
 	}
 
-	joinRoom(roomID: string): boolean {
+	joinRoom(roomID: string): JoiningRole | false {
 		if (this.room) this.leaveRoom()
-		const room = RoomController.joinRoom(roomID, this)
-		if (!room) return false
-		this.room = room
+
+		const result = RoomController.joinRoom(roomID, this)
+		if (!result) return false
+
+		this.room = result.room
+		this.role = result.role
 		this.socket.join(roomID)
-		return true
+		return result.role
 	}
 }

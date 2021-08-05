@@ -1,22 +1,22 @@
 <script lang="ts" setup>
 import clipboardCopy from 'copy-to-clipboard-ultralight'
-import Singleton from '@/store/onlineRoom'
+import OnlineRoom from '@/store/onlineRoom'
 import { useRouter } from 'vue-router'
 import TypeUsername from '@/components/TypeUsername.vue'
 
 const router = useRouter()
 
 const username = computed({
-	get: () => Singleton.instance.state.username,
-	set: v => Singleton.instance.rename(v),
+	get: () => OnlineRoom.instance.state.username,
+	set: v => OnlineRoom.instance.rename(v),
 })
-const { roomID } = Singleton.instance.refs
+const { roomID } = OnlineRoom.instance.refs
 
 const link = ref<string>()
 
 async function makeNewGame() {
 	try {
-		link.value = await Singleton.instance.createRoom()
+		link.value = await OnlineRoom.instance.createRoom()
 	} catch (e) {
 		console.error(e)
 		router.push('/')

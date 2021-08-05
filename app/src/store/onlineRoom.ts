@@ -3,12 +3,15 @@ import { ClientEventsMap, ServerEventsMap } from '@common/socketEventsMap'
 import { DeepReadonly, reactive, readonly, ToRefs, toRefs } from 'vue'
 import { wait } from '@common/functions'
 import { useDebounceFn } from '@vueuse/core'
+import { JoiningRole, PlayerRole } from '@common/player'
+import router from '@/router/router'
 
 interface State {
 	messages: string[]
 	username: string
 	link: string | undefined
 	roomID: string | undefined
+	role: PlayerRole | undefined
 }
 
 const initialState: State = {
@@ -16,10 +19,11 @@ const initialState: State = {
 	username: 'Player',
 	link: undefined,
 	roomID: undefined,
+	role: undefined,
 }
 
-export default class Singleton {
-	private static _instance: Singleton
+export default class OnlineRoom {
+	private static _instance: OnlineRoom
 	private _state: State
 	private socket: Socket<ServerEventsMap, ClientEventsMap>
 
@@ -27,11 +31,13 @@ export default class Singleton {
 		this._state = reactive(initialState)
 		this.socket = io('192.168.1.11:8080')
 
-		this.socket.on('message', message => Singleton.addMessage(message))
+		this.socket.on('message', message => OnlineRoom.addMessage(message))
+
+		this.socket.on('room_closed', () => this.roomClosed())
 	}
 
-	static get instance(): Singleton {
-		return Singleton._instance || (Singleton._instance = new Singleton())
+	static get instance(): OnlineRoom {
+		return OnlineRoom._instance || (OnlineRoom._instance = new OnlineRoom())
 	}
 
 	mutate<K extends keyof State>(key: K, val: State[K]): void {
@@ -45,34 +51,35 @@ export default class Singleton {
 	}
 
 	static reconnect() {
-		if (Singleton.instance.socket.disconnected)
-			Singleton.instance.socket.connect()
+		if (OnlineRoom.instance.socket.disconnected)
+			OnlineRoom.instance.socket.connect()
 	}
 
 	static addMessage(message: string) {
-		Singleton.instance._state.messages.push(message)
+		OnlineRoom.instance._state.messages.push(message)
 	}
 
 	rename(username: string) {
-		Singleton.instance.mutate('username', username)
-		Singleton.emitUsername()
+		OnlineRoom.instance.mutate('username', username)
+		OnlineRoom.emitUsername()
 	}
 	private static emitUsername = useDebounceFn(() =>
-		Singleton.instance.socket.emit(
+		OnlineRoom.instance.socket.emit(
 			'rename',
-			Singleton.instance.state.username,
+			OnlineRoom.instance.state.username,
 		),
 	)
 
-	private static setRoomID(roomID: string): string {
+	private static setRoom(roomID: string, role: PlayerRole): string {
 		const link = window.origin + '/join/' + roomID
-		Singleton.instance.mutate('roomID', roomID)
-		Singleton.instance.mutate('link', link)
+		OnlineRoom.instance.mutate('roomID', roomID)
+		OnlineRoom.instance.mutate('link', link)
+		OnlineRoom.instance.mutate('role', role)
 		return link
 	}
 
 	createRoom(): Promise<string> {
-		Singleton.reconnect()
+		OnlineRoom.reconnect()
 
 		let pending = true
 		return new Promise<string>((resolve, reject) => {
@@ -87,21 +94,21 @@ export default class Singleton {
 			function onRoomCreated(roomID: string) {
 				if (!pending) return reject('Promise was already resolved.')
 				pending = false
-				const link = Singleton.setRoomID(roomID)
+				const link = OnlineRoom.setRoom(roomID, 'creator')
 				resolve(link)
 			}
 
 			function rejection(reason?: string) {
 				if (!pending) return
 				pending = false
-				reason && Singleton.addMessage(reason)
+				reason && OnlineRoom.addMessage(reason)
 				reject(reason)
 			}
 		})
 	}
 
 	joinRoom(roomID: string): Promise<void> {
-		Singleton.reconnect()
+		OnlineRoom.reconnect()
 
 		let pending = true
 		return new Promise((resolve, reject) => {
@@ -112,20 +119,27 @@ export default class Singleton {
 
 			wait(5000).then(() => rejection('Server timeout...'))
 
-			function onResult(result: boolean) {
+			function onResult(role: JoiningRole | false) {
 				if (!pending) return rejection('Promise was already resolved.')
-				if (!result) return rejection("Couldn't join the room.")
+				if (!role) return rejection("Couldn't join the room.")
 				pending = false
-				Singleton.setRoomID(roomID)
+				OnlineRoom.setRoom(roomID, role)
 				resolve()
 			}
 
 			function rejection(reason?: string) {
 				if (!pending) return
 				pending = false
-				reason && Singleton.addMessage(reason)
+				reason && OnlineRoom.addMessage(reason)
 				reject(reason)
 			}
 		})
+	}
+
+	private roomClosed() {
+		this.mutate('roomID', undefined)
+		this.mutate('link', undefined)
+		this.mutate('role', undefined)
+		router.push('/')
 	}
 }

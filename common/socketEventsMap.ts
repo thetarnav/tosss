@@ -1,3 +1,5 @@
+import { JoiningRole } from './player'
+
 export interface ClientEventsMap {
 	rename: (username: string) => void
 	create_room: () => void
@@ -7,5 +9,6 @@ export interface ClientEventsMap {
 export interface ServerEventsMap {
 	message: (msg: string) => void
 	room_created: (roomID: string) => void
-	room_join_result: (success: boolean) => void
+	room_join_result: (result: JoiningRole | false) => void
+	room_closed: () => void
 }
