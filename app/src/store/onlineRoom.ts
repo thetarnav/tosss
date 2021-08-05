@@ -74,7 +74,7 @@ export default class Singleton {
 	createRoom(): Promise<string> {
 		Singleton.reconnect()
 
-		let rejected = false
+		let pending = true
 		return new Promise<string>((resolve, reject) => {
 			this.socket
 				.emit('create_room')
@@ -85,13 +85,15 @@ export default class Singleton {
 
 			// Handles room successfully created
 			function onRoomCreated(roomID: string) {
-				if (rejected) return reject('Promise was already resolved.')
+				if (!pending) return reject('Promise was already resolved.')
+				pending = false
 				const link = Singleton.setRoomID(roomID)
 				resolve(link)
 			}
 
 			function rejection(reason?: string) {
-				rejected = true
+				if (!pending) return
+				pending = false
 				reason && Singleton.addMessage(reason)
 				reject(reason)
 			}
@@ -101,7 +103,7 @@ export default class Singleton {
 	joinRoom(roomID: string): Promise<void> {
 		Singleton.reconnect()
 
-		let rejected = false
+		let pending = true
 		return new Promise((resolve, reject) => {
 			this.socket
 				.emit('join_room', roomID)
@@ -111,15 +113,16 @@ export default class Singleton {
 			wait(5000).then(() => rejection('Server timeout...'))
 
 			function onResult(result: boolean) {
-				if (rejected) return rejection('Promise was already resolved.')
+				if (!pending) return rejection('Promise was already resolved.')
 				if (!result) return rejection("Couldn't join the room.")
-
+				pending = false
 				Singleton.setRoomID(roomID)
 				resolve()
 			}
 
 			function rejection(reason?: string) {
-				rejected = true
+				if (!pending) return
+				pending = false
 				reason && Singleton.addMessage(reason)
 				reject(reason)
 			}

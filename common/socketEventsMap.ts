@@ -1,5 +1,4 @@
 export interface ClientEventsMap {
-	message: (msg: string) => void
 	rename: (username: string) => void
 	create_room: () => void
 	join_room: (roomID: string) => void
