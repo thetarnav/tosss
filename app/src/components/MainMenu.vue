@@ -1,10 +1,21 @@
-<script lang="ts" setup></script>
+<script lang="ts" setup>
+import initHotseatGame from '@/views/Board/controllers/Hotseat'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+
+const runHotseat = () => {
+	initHotseatGame()
+	router.push({ name: 'Board' })
+}
+</script>
 
 <template>
 	<h3>How do you wanna play?</h3>
 	<nav>
 		<router-link :to="{ name: 'Online' }" class="btn">Online</router-link>
-		<button>Hotseat</button>
+		<!-- <router-link :to="{ name: 'Board' }" class="btn">Hotseat</router-link> -->
+		<button @click="runHotseat">Hotseat</button>
 		<button>vs AI</button>
 	</nav>
 </template>

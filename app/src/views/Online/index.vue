@@ -1,16 +1,16 @@
 <script lang="ts" setup>
-import OnlineRoom from '@/store/onlineRoom'
+import ROOM from '@/store/onlineRoom'
 import { onBeforeRouteLeave } from 'vue-router'
 
-const { role } = OnlineRoom.instance.refs
-OnlineRoom.reconnect()
+const { role } = ROOM.instance.refs
+ROOM.reconnect()
 
 onBeforeRouteLeave((to, from, next) => {
 	next()
 	// ON GO BACK
 	// by clicking on go back button on using browser buttons
 	if (to.path === '/') {
-		OnlineRoom.disconnect()
+		ROOM.disconnect()
 	}
 })
 </script>
