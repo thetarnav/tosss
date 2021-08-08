@@ -1,14 +1,11 @@
 <script lang="ts" setup>
-import type { DiceIndex } from '@/modules/types'
 import BOARD from '@/modules/Board'
+
+const { controller } = BOARD.instance
 
 const playableDices = computed(() =>
 	BOARD.instance.filteredList(dice => !dice.isStored),
 )
-
-const selectDice = (index: DiceIndex) => {
-	BOARD.instance.selectDice(index)
-}
 </script>
 
 <template>
@@ -21,7 +18,7 @@ const selectDice = (index: DiceIndex) => {
 				isDisabled,
 			}"
 			class="dice"
-			@click="selectDice(index)"
+			@click="() => controller?.select(index)"
 		>
 			{{ value }}
 		</button>

@@ -10,4 +10,5 @@ export interface BoardController {
 	takeDisabled: boolean
 	roll: () => void
 	take: () => void
+	select: (index: DiceIndex) => void
 }

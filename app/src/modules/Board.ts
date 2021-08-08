@@ -8,30 +8,35 @@ import {
 	DiceValue,
 	diceValues,
 } from './types'
+import cloneDeep from 'clone-deep'
 
-interface BoardState {
+export interface BoardState {
 	dices: Record<DiceIndex, DiceState> | undefined
 	activePlayer: 0 | 1
 	totalScore: [number, number]
 	storedScore: number
 	lostRound: boolean
+	winner: 0 | 1 | undefined
 }
+export type BoardStateRefs = ToRefs<DeepReadonly<BoardState>>
+export type PublicBoardState = DeepReadonly<BoardState>
 const initialState: BoardState = {
 	dices: undefined,
 	activePlayer: 0,
 	totalScore: [0, 0],
 	storedScore: 0,
 	lostRound: false,
+	winner: undefined,
 }
 
 export default class BOARD {
 	private static _instance: BOARD
 	private readonly _state: BoardState
 
-	controller = ref<BoardController | undefined>()
+	readonly controller = ref<BoardController>()
 
 	private constructor() {
-		this._state = reactive(initialState)
+		this._state = reactive(cloneDeep(initialState))
 	}
 
 	static get instance(): BOARD {
@@ -44,10 +49,10 @@ export default class BOARD {
 	mutate<K extends keyof BoardState>(key: K, val: BoardState[K]): void {
 		this._state[key] = val
 	}
-	get state(): DeepReadonly<BoardState> {
+	get state(): PublicBoardState {
 		return readonly(this._state)
 	}
-	get refs(): ToRefs<DeepReadonly<BoardState>> {
+	get refs(): BoardStateRefs {
 		return toRefs(this.state)
 	}
 
@@ -78,6 +83,7 @@ export default class BOARD {
 
 	disabled = computed<boolean>(
 		() =>
+			this._state.winner !== undefined ||
 			this._state.lostRound ||
 			this.unfinishedChain.value !== undefined ||
 			this.selectedList.value.length === 0,
@@ -165,6 +171,11 @@ export default class BOARD {
 		state.totalScore[state.activePlayer] +=
 			state.storedScore + this.selectedScore.value
 		state.storedScore = 0
+	}
+
+	fullClear() {
+		this.controller.value = undefined
+		Object.assign(this._state, cloneDeep(initialState))
 	}
 }
 
