@@ -9,10 +9,13 @@ export default function initHotseatGame() {
 
 class HotseatController implements BoardController {
 	private boardState: PublicBoardState
+	private actionsDisabled = false
+
+	turnLost = false
 
 	constructor() {
+		BOARD.instance.fullClear()
 		this.boardState = BOARD.instance.state
-		BOARD.instance.mutate('activePlayer', 0)
 		do {
 			BOARD.instance.rollDices(true)
 		} while (!BOARD.instance.isPlayable.value)
@@ -20,21 +23,18 @@ class HotseatController implements BoardController {
 
 	get rollDisabled() {
 		return (
+			this.actionsDisabled ||
 			BOARD.instance.disabled.value ||
 			// Also disable roll when there is no more dices to play with (selected or stored all of them)
 			BOARD.instance.freeList.value.length === 0
 		)
 	}
 	get takeDisabled() {
-		return BOARD.instance.disabled.value
+		return this.actionsDisabled || BOARD.instance.disabled.value
 	}
 
 	select(index: DiceIndex) {
-		if (
-			BOARD.instance.state.winner === undefined &&
-			BOARD.instance.state.lostRound === false
-		)
-			BOARD.instance.selectDice(index)
+		if (!this.actionsDisabled) BOARD.instance.selectDice(index)
 	}
 
 	roll() {
@@ -44,8 +44,7 @@ class HotseatController implements BoardController {
 		// Check if player lost after rolling
 		if (!BOARD.instance.isPlayable.value) {
 			BOARD.instance.mutate('storedScore', 0)
-			BOARD.instance.rollDices(true)
-			BOARD.instance.switchActivePlayer()
+			this.onTurnLost()
 		}
 	}
 
@@ -67,14 +66,22 @@ class HotseatController implements BoardController {
 		BOARD.instance.switchActivePlayer()
 
 		// Check if player lost his turn immediately
-		if (!BOARD.instance.isPlayable.value) {
+		if (!BOARD.instance.isPlayable.value) this.onTurnLost()
+	}
+
+	private onTurnLost() {
+		this.actionsDisabled = true
+		this.turnLost = true
+		setTimeout(() => {
 			BOARD.instance.rollDices(true)
 			BOARD.instance.switchActivePlayer()
-		}
+			this.actionsDisabled = false
+			this.turnLost = false
+		}, 1500)
 	}
 
 	private playerWon(playerIndex: 0 | 1) {
-		BOARD.instance.mutate('winner', playerIndex)
+		this.actionsDisabled = true
 		summonModal({
 			title: 'Player ' + playerIndex,
 			text: 'won this round!',
@@ -95,11 +102,13 @@ class HotseatController implements BoardController {
 
 	private playerQuit() {
 		router.push('/')
+		BOARD.instance.controller.value = undefined
 		BOARD.instance.fullClear()
 	}
 
 	private playAgain() {
 		BOARD.instance.fullClear()
-		initHotseatGame()
+		BOARD.instance.rollDices(true)
+		this.actionsDisabled = false
 	}
 }

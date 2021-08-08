@@ -9,7 +9,13 @@ const playableDices = computed(() =>
 </script>
 
 <template>
-	<TransitionGroup tag="div" class="dices" name="dices" :duration="700">
+	<TransitionGroup
+		name="dice"
+		:duration="700"
+		tag="div"
+		class="dices"
+		:class="{ 'round-lost': controller?.turnLost }"
+	>
 		<button
 			v-for="{ id, index, value, isSelected, isDisabled } in playableDices"
 			:key="id"
@@ -39,20 +45,22 @@ const playableDices = computed(() =>
 		&.isDisabled {
 			@apply opacity-50 pointer-events-none cursor-default;
 		}
+
+		&-leave-active {
+			position: absolute;
+		}
+		&-enter-from {
+			@apply opacity-0 transform -translate-x-8;
+		}
+		&-leave-to {
+			@apply opacity-0 transform translate-x-24;
+		}
 	}
 
-	/* &-leave-active,
-	&-enter-active {
-		@apply duration-700;
-	} */
-	&-leave-active {
-		position: absolute;
-	}
-	&-enter-from {
-		@apply opacity-0 transform -translate-x-8;
-	}
-	&-leave-to {
-		@apply opacity-0 transform translate-x-24;
+	&.round-lost {
+		.dice:not(.dice-leave-active) {
+			@apply opacity-50;
+		}
 	}
 }
 </style>

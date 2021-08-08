@@ -3,11 +3,14 @@ import { useRouter } from 'vue-router'
 import BOARD from '@/modules/Board'
 import Dices from './Dices.vue'
 import Player from './Player.vue'
+import { onBeforeMount } from 'vue'
 
 const router = useRouter()
 const { controller } = BOARD.instance
 
-if (!controller) router.push('/')
+onBeforeMount(() => {
+	if (!controller) router.push('/')
+})
 </script>
 
 <template>

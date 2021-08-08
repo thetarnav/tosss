@@ -15,8 +15,6 @@ export interface BoardState {
 	activePlayer: 0 | 1
 	totalScore: [number, number]
 	storedScore: number
-	lostRound: boolean
-	winner: 0 | 1 | undefined
 }
 export type BoardStateRefs = ToRefs<DeepReadonly<BoardState>>
 export type PublicBoardState = DeepReadonly<BoardState>
@@ -25,8 +23,6 @@ const initialState: BoardState = {
 	activePlayer: 0,
 	totalScore: [0, 0],
 	storedScore: 0,
-	lostRound: false,
-	winner: undefined,
 }
 
 export default class BOARD {
@@ -83,8 +79,6 @@ export default class BOARD {
 
 	disabled = computed<boolean>(
 		() =>
-			this._state.winner !== undefined ||
-			this._state.lostRound ||
 			this.unfinishedChain.value !== undefined ||
 			this.selectedList.value.length === 0,
 	)
@@ -174,7 +168,6 @@ export default class BOARD {
 	}
 
 	fullClear() {
-		this.controller.value = undefined
 		Object.assign(this._state, cloneDeep(initialState))
 	}
 }
