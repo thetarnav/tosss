@@ -1,36 +1,40 @@
 <script lang="ts" setup>
-import type { DiceIndex } from './types'
-import BOARD from './Board'
+import type { DiceIndex } from '@/modules/types'
+import BOARD from '@/modules/Board'
 
-const { dices } = BOARD.instance.refs
+const playableDices = computed(() =>
+	BOARD.instance.filteredList(dice => !dice.isStored),
+)
 
 const selectDice = (index: DiceIndex) => {
-	BOARD.instance.userSelectDice(index)
+	BOARD.instance.selectDice(index)
 }
 </script>
 
 <template>
-	<div class="dices">
+	<TransitionGroup tag="div" class="dices" name="dices" :duration="700">
 		<button
-			v-for="{ index, value, isSelected, isDisabled } in dices"
-			:key="Number(index)"
+			v-for="{ id, index, value, isSelected, isDisabled } in playableDices"
+			:key="id"
 			:class="{
 				isSelected,
 				isDisabled,
 			}"
+			class="dice"
 			@click="selectDice(index)"
 		>
 			{{ value }}
 		</button>
-	</div>
+	</TransitionGroup>
 </template>
 
 <style lang="postcss" scoped>
 .dices {
-	@apply m-4 grid grid-cols-3 gap-2;
+	@apply flex flex-wrap w-48 h-48 justify-center content-center;
 
-	button {
-		@apply w-12 h-12;
+	.dice {
+		@apply w-12 h-12 m-2;
+		transition: transform 700ms, opacity 200ms, background-color 200ms;
 
 		&.isSelected {
 			@apply bg-yellow-200;
@@ -38,6 +42,20 @@ const selectDice = (index: DiceIndex) => {
 		&.isDisabled {
 			@apply opacity-50 pointer-events-none cursor-default;
 		}
+	}
+
+	/* &-leave-active,
+	&-enter-active {
+		@apply duration-700;
+	} */
+	&-leave-active {
+		position: absolute;
+	}
+	&-enter-from {
+		@apply opacity-0 transform -translate-x-8;
+	}
+	&-leave-to {
+		@apply opacity-0 transform translate-x-24;
 	}
 }
 </style>

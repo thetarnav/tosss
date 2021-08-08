@@ -1,7 +1,9 @@
 import { random } from '@common/functions'
 import { DiceValue, DiceIndex } from './types'
+import { nanoid } from 'nanoid'
 
 export interface DiceState {
+	id: string
 	index: DiceIndex
 	value: DiceValue
 	isSelected: boolean
@@ -12,6 +14,7 @@ export interface DiceState {
 }
 
 export default class Dice implements DiceState {
+	public id: string
 	public value: DiceValue = 1
 	public isSelected = false
 	public isStored = false
@@ -19,6 +22,7 @@ export default class Dice implements DiceState {
 
 	constructor(public index: DiceIndex, value?: DiceValue) {
 		this.value = value || this.random
+		this.id = nanoid(8)
 	}
 
 	private get random(): DiceValue {

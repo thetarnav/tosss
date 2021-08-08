@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import ROOM from '@/store/onlineRoom'
+import ROOM from '@/modules/OnlineRoom'
 import { onBeforeRouteLeave } from 'vue-router'
 
 const { role } = ROOM.instance.refs

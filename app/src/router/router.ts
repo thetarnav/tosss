@@ -28,7 +28,7 @@ const routes = [
 	{
 		path: '/board',
 		name: 'Board',
-		component: () => import('@/views/Board/Board.vue'),
+		component: () => import('@/views/Board/_Board.vue'),
 	},
 ]
 

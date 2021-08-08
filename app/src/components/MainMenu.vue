@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import initHotseatGame from '@/views/Board/controllers/Hotseat'
+import initHotseatGame from '@/controllers/Hotseat'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()

@@ -13,22 +13,22 @@ interface BoardState {
 	dices: Record<DiceIndex, DiceState> | undefined
 	activePlayer: 0 | 1
 	totalScore: [number, number]
-	storedScore: [number, number]
-	selectedScore: [number, number]
+	storedScore: number
+	lostRound: boolean
 }
 const initialState: BoardState = {
 	dices: undefined,
 	activePlayer: 0,
 	totalScore: [0, 0],
-	storedScore: [0, 0],
-	selectedScore: [0, 0],
+	storedScore: 0,
+	lostRound: false,
 }
 
 export default class BOARD {
 	private static _instance: BOARD
 	private readonly _state: BoardState
 
-	controller: BoardController | undefined
+	controller = ref<BoardController | undefined>()
 
 	private constructor() {
 		this._state = reactive(initialState)
@@ -54,9 +54,7 @@ export default class BOARD {
 	private dicesList = computed<DiceState[]>(() =>
 		this._state.dices ? Object.values(this._state.dices) : [],
 	)
-	private filteredList = (
-		filter: (dice: DiceState) => boolean,
-	): DiceState[] => {
+	filteredList = (filter: (dice: DiceState) => boolean): DiceState[] => {
 		return this.dicesList.value.filter(filter)
 	}
 	private selectedList = computed<DiceState[]>(() =>
@@ -65,6 +63,11 @@ export default class BOARD {
 	private storedList = computed<DiceState[]>(() =>
 		this.filteredList(dice => dice.isStored),
 	)
+	freeList = computed<DiceState[]>(() =>
+		this.filteredList(dice => !dice.isStored && !dice.isSelected),
+	)
+
+	isPlayable = computed<boolean>(() => countPoints(this.freeList.value) > 0)
 
 	private unfinishedChain = computed<DiceValue | undefined>(() => {
 		const count = countValues(this.selectedList.value)
@@ -73,31 +76,47 @@ export default class BOARD {
 		)
 	})
 
-	get availablePoints(): number {
+	disabled = computed<boolean>(
+		() =>
+			this._state.lostRound ||
+			this.unfinishedChain.value !== undefined ||
+			this.selectedList.value.length === 0,
+	)
+
+	selectedScore = computed<number>(() =>
+		this.selectedList.value.length === 0
+			? 0
+			: countPoints(this.selectedList.value),
+	)
+
+	get availableScore(): number {
 		const dicesList = this.dicesList.value
 		if (!dicesList.length) return 0
 		return countPoints(dicesList)
 	}
 
-	rollDices(): void {
-		if (this._state.dices === undefined) {
+	/**
+	 * Randomizes values of dices on the board.
+	 * Rolls only not-selected & not-stored dices, if the "clear" param isn't enabled
+	 * @param clear - to reset every dice on the board
+	 */
+	rollDices(clear = false): void {
+		if (clear || this._state.dices === undefined) {
 			// Fresh Game
 			this._state.dices = randomDices()
 		} else {
 			// In the middle of the game
-			const rollableDices = this.filteredList(
-				dice => !dice.isSelected && !dice.isStored,
-			)
-			rollableDices.forEach(dice => dice.roll())
+			const freeList = this.freeList.value
+			freeList.forEach(dice => dice.roll())
 		}
 	}
 
-	toggleActivePlayer(): 0 | 1 {
+	switchActivePlayer(): 0 | 1 {
 		this.mutate('activePlayer', this.state.activePlayer ? 0 : 1)
 		return this.state.activePlayer
 	}
 
-	userSelectDice(index: DiceIndex) {
+	selectDice(index: DiceIndex) {
 		const dice = this._state.dices?.[index],
 			selectedList = this.selectedList.value,
 			chain = this.unfinishedChain.value
@@ -105,6 +124,7 @@ export default class BOARD {
 		if (
 			!dice ||
 			dice.isDisabled ||
+			dice.isStored ||
 			(selectedList.length && chain !== undefined && chain !== dice.value)
 		)
 			return
@@ -113,13 +133,38 @@ export default class BOARD {
 		this.disableDices()
 	}
 
-	disableDices() {
+	private disableDices() {
 		const chain = this.unfinishedChain.value,
 			dices = this.dicesList.value
 
 		dices.forEach(dice => {
-			dice.isDisabled = chain !== dice.value && chain !== undefined
+			dice.isDisabled =
+				!dice.isStored && chain !== dice.value && chain !== undefined
 		})
+	}
+
+	/**
+	 * - Adds score of selected dices to "storedScore"
+	 * - Turns selected dices into stored ones
+	 */
+	storeSelected() {
+		const selectedList = this.selectedList.value,
+			chain = this.unfinishedChain.value
+
+		if (chain) return
+
+		this._state.storedScore += this.selectedScore.value
+		selectedList.forEach(dice => {
+			dice.isStored = dice.isSelected || dice.isStored
+			dice.isSelected = false
+		})
+	}
+
+	addTotalScore() {
+		const state = this._state
+		state.totalScore[state.activePlayer] +=
+			state.storedScore + this.selectedScore.value
+		state.storedScore = 0
 	}
 }
 

@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import TypeUsername from '@/components/TypeUsername.vue'
 import { useRoute, useRouter } from 'vue-router'
-import ROOM from '@/store/onlineRoom'
+import ROOM from '@/modules/OnlineRoom'
 import { onMounted } from 'vue-demi'
 
 const route = useRoute()

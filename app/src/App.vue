@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { messages } from '@/store/onlineRoom'
+import { messages } from '@/modules/OnlineRoom'
 import { useRoute, useRouter } from 'vue-router'
 
 const route = useRoute()
