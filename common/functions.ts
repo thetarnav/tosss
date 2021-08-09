@@ -24,19 +24,36 @@ export const clamp = (value: number, min: number, max: number): number =>
 export const deleteRandom = (array: any[]): boolean =>
 	array.splice(random(0, array.length, 'floor'), 1).length > 0
 
-export function getRandom<T>(iterable: Array<T>): T
+export function getRandom<T>(iterable: T[]): T
 export function getRandom(iterable: string): string
 export function getRandom(iterable: any[] | string): any {
 	return iterable[random(0, iterable.length, 'floor')]
 }
 
 export function filterDuplicates(iterable: string): string
-export function filterDuplicates<T>(iterable: Array<T>): Array<T>
+export function filterDuplicates<T>(iterable: T[]): T[]
 export function filterDuplicates(iterable: any[] | string): any {
 	const isString = typeof iterable === 'string',
 		result: any[] = []
 	new Set(iterable).forEach(x => result.push(x))
 	return isString ? result.join('') : result
+}
+
+export const keyLookup = <T extends Record<string, any>, K extends keyof T>(
+	list: T[],
+	key: K,
+): Record<T[K], number> =>
+	list.reduce((a, e) => {
+		a[e[key]] = ++a[e[key]] || 1
+		return a
+	}, {} as Record<K, number>)
+
+export function getObjectDuplicates<
+	T extends Record<string, any>,
+	K extends keyof T,
+>(list: T[], key: K): T[] {
+	const lookup = keyLookup(list, key)
+	return list.filter(e => lookup[e[key]] > 1)
 }
 
 export const wait = (time: number): Promise<number> =>

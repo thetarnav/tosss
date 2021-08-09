@@ -15,7 +15,7 @@ export interface DiceState {
 
 export default class Dice implements DiceState {
 	public id: string
-	public value: DiceValue = 1
+	public value: DiceValue = '1'
 	public isSelected = false
 	public isStored = false
 	public isDisabled = false
@@ -26,7 +26,7 @@ export default class Dice implements DiceState {
 	}
 
 	private get random(): DiceValue {
-		return random(1, 6, 'round') as DiceValue
+		return String(random(1, 6, 'round')) as DiceValue
 	}
 	roll() {
 		if (this.isStored) return
