@@ -71,19 +71,24 @@ export default class BOARD {
 	)
 
 	selectedScore = computed<number>(() => {
-		const dices = this.selectedList.value,
-			{ street } = this._state
+		const dices = this.selectedList.value
 
 		if (dices.length === 0) return 0
 
-		if (street && dices.length >= 5 && !this.isStreetUnfinished.value) {
-			let score = streetScores[street.type]
+		if (
+			this._state.street &&
+			dices.length >= 5 &&
+			!this.isStreetUnfinished.value
+		) {
+			const selectedStreet = this.selectedStreet.value
+			if (!selectedStreet) return 0
+			let score = streetScores[selectedStreet.type]
 
-			const bothDupesSelected = street.duplicates?.every(
+			const bothDupesSelected = selectedStreet.duplicates?.every(
 				dice => dice.isSelected,
 			)
 			if (bothDupesSelected)
-				score += street.duplicateValue === '1' ? 100 : 50
+				score += selectedStreet.duplicateValue === '1' ? 100 : 50
 
 			return score
 		}
@@ -127,21 +132,12 @@ export default class BOARD {
 	})
 
 	private isStreetUnfinished = computed<boolean>(() => {
-		const street = this._state.street
-		// Street is not unfinished if every selected dice is a solo dice ("1"|"5")
-		if (!street || this.selectedList.value.every(dice => isSoloDice(dice)))
-			return false
+		const street = this._state.street,
+			selectedList = this.selectedList.value
 
-		// For full street check if every dice is selected
-		if (street.type === '1-6') return this.selectedList.value.length !== 6
+		if (!street || selectedList.every(dice => isSoloDice(dice))) return false
 
-		// To complete a street every (x=0) or almost every (x=1) dice must be selected
-		const notSelected = this.filteredList(dice => !dice.isSelected)
-		// The remaining dice (x=1) can only be a duplicate
-		const isNotSelectedADuplicate = () =>
-			notSelected.length === 1 && street.duplicates.includes(notSelected[0])
-
-		return notSelected.length !== 0 && !isNotSelectedADuplicate()
+		return !this.selectedStreet.value
 	})
 
 	disabled = computed<boolean>(
@@ -171,6 +167,14 @@ export default class BOARD {
 		this.mutate('street', street)
 	}
 
+	private selectedStreet = computed<PartialStreet | FullStreet | undefined>(
+		() => {
+			return this.selectedList.value.length >= 5
+				? this.checkStreet(this.selectedList.value)
+				: undefined
+		},
+	)
+
 	private checkStreet(
 		dices: DiceState[],
 	): PartialStreet | FullStreet | undefined {
@@ -178,23 +182,33 @@ export default class BOARD {
 			missing = findKey(count, n => n === 0),
 			missingLast = findLastKey(count, n => n === 0)
 
-		const getDuplicates = () =>
-			getObjectDuplicates(dices, 'value') as [DiceState, DiceState]
+		const getDuplicates = () => {
+			const dupes = getObjectDuplicates(dices, 'value')
+			return dupes.length === 2
+				? {
+						duplicates: dupes as [DiceState, DiceState],
+						duplicateValue: dupes[0].value,
+				  }
+				: {
+						duplicates: null,
+						duplicateValue: null,
+				  }
+		}
 
 		if (missing === '1' && missingLast === '1') {
-			const duplicates = getDuplicates()
+			const { duplicates, duplicateValue } = getDuplicates()
 			return {
 				type: '2-6',
 				duplicates,
-				duplicateValue: duplicates[0].value,
+				duplicateValue,
 			}
 		}
 		if (missing === '6' && missingLast === '6') {
-			const duplicates = getDuplicates()
+			const { duplicates, duplicateValue } = getDuplicates()
 			return {
 				type: '1-5',
 				duplicates,
-				duplicateValue: duplicates[0].value,
+				duplicateValue,
 			}
 		}
 		if (!missing && !missingLast)
@@ -225,8 +239,8 @@ export default class BOARD {
 
 			if (
 				street.type === '1-6' ||
-				!street.duplicates.includes(selectedDice) ||
-				['1', '5'].includes(street.duplicateValue)
+				!street.duplicates?.includes(selectedDice) ||
+				['1', '5'].includes(street.duplicateValue ?? '')
 			)
 				return
 
@@ -282,7 +296,10 @@ function randomDices(): Record<DiceIndex, DiceState> {
 	const dices = {} as Record<DiceIndex, DiceState>
 	for (const i of diceIndexes) {
 		dices[i] = new Dice(i)
+		// @ts-ignore
+		// dices[i].value = String(i + 2)
 	}
+	// dices[5].value = '5'
 	return dices
 }
 

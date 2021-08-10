@@ -82,6 +82,7 @@ class HotseatController implements BoardController {
 
 	private playerWon(playerIndex: 0 | 1) {
 		this.actionsDisabled = true
+		BOARD.instance.mutate('dices', undefined)
 		summonModal({
 			title: 'Player ' + playerIndex,
 			text: 'won this round!',

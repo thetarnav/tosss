@@ -22,8 +22,8 @@ export const streetScores = {
 
 export interface PartialStreet {
 	type: '1-5' | '2-6'
-	duplicates: [DiceState, DiceState]
-	duplicateValue: DiceValue
+	duplicates: [DiceState, DiceState] | null
+	duplicateValue: DiceValue | null
 }
 
 export interface FullStreet {
