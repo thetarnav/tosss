@@ -22,12 +22,7 @@ class HotseatController implements BoardController {
 	}
 
 	get rollDisabled() {
-		return (
-			this.actionsDisabled ||
-			BOARD.instance.disabled.value ||
-			// Also disable roll when there is no more dices to play with (selected or stored all of them)
-			BOARD.instance.freeList.value.length === 0
-		)
+		return this.actionsDisabled || BOARD.instance.disabled.value
 	}
 	get takeDisabled() {
 		return this.actionsDisabled || BOARD.instance.disabled.value
@@ -40,7 +35,10 @@ class HotseatController implements BoardController {
 	roll() {
 		if (this.rollDisabled) return
 		BOARD.instance.storeSelected()
-		BOARD.instance.rollDices()
+		// If all dices are selected or stored, roll will roll all of them, giving player bonus turn.
+		if (BOARD.instance.freeList.value.length === 0)
+			BOARD.instance.rollDices(true)
+		else BOARD.instance.rollDices()
 		// Check if player lost after rolling
 		if (!BOARD.instance.isPlayable.value) {
 			BOARD.instance.mutate('storedScore', 0)
