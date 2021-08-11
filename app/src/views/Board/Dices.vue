@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import type { DiceIndex } from '@common/types'
 import BOARD from '@/modules/Board'
 
 const { controller } = BOARD.instance
@@ -6,6 +7,8 @@ const { controller } = BOARD.instance
 const playableDices = computed(() =>
 	BOARD.instance.filteredList(dice => !dice.isStored),
 )
+const select = (i: number) =>
+	i >= 0 && i <= 5 && controller.value?.select(i as DiceIndex)
 </script>
 
 <template>
@@ -17,14 +20,14 @@ const playableDices = computed(() =>
 		:class="{ 'round-lost': controller?.turnLost }"
 	>
 		<button
-			v-for="{ id, index, value, isSelected, isDisabled } in playableDices"
+			v-for="({ id, value, isSelected, isDisabled }, index) in playableDices"
 			:key="id"
 			:class="{
 				isSelected,
 				isDisabled,
 			}"
 			class="dice"
-			@click="() => controller?.select(index)"
+			@click="select(index)"
 		>
 			{{ value }}
 		</button>

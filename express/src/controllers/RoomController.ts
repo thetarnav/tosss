@@ -1,7 +1,8 @@
-import { JoiningRole } from '@common/player'
 import { nanoid } from 'nanoid'
 import { io } from '..'
 import Player from './Player'
+import { DiceProps, JoiningRole, PlayerRole, PlayingRole } from '@common/types'
+import { ServerEventsMap } from '@common/socketEventsMap'
 
 /**
  * One instance per socket room created
@@ -14,6 +15,9 @@ export default class RoomController {
 	opponent?: Player
 	readonly spectators: Record<string, Player> = {}
 
+	playing = false
+	activePlayer: PlayingRole = 'creator'
+
 	constructor(player: Player) {
 		this.roomID = nanoid(10)
 		this.creator = player
@@ -25,31 +29,35 @@ export default class RoomController {
 		return Object.values(this.spectators)
 	}
 
+	emit<T extends keyof ServerEventsMap>(
+		name: T,
+		...args: Parameters<ServerEventsMap[T]>
+	) {
+		io.to(this.roomID).emit(name, ...args)
+	}
+
 	join(player: Player): JoiningRole {
 		const { id } = player
 		if (!this.opponent) {
 			this.opponent = player
-			io.to(this.roomID).emit('message', `Opponent ${id} joined!`)
+			this.emit('message', `Opponent ${player.name} joined!`)
 			return 'opponent'
 		} else {
 			this.spectators[id] = player
-			io.to(this.roomID).emit('message', `Spectator ${id} joined!`)
+			this.emit('message', `Spectator ${player.name} joined!`)
 			return 'spectator'
 		}
 	}
 
 	leave(player: Player) {
 		if (player.role === 'creator' || player.role === 'opponent') {
-			io.to(this.roomID).emit(
+			this.emit(
 				'message',
-				`Player ${player.id} left the room! Closing the Room.`,
+				`Player ${player.name} left the room! Closing the Room.`,
 			)
 			this.closeRoom()
 		} else {
-			io.to(this.roomID).emit(
-				'message',
-				`Spectator ${player.id} left the room!`,
-			)
+			this.emit('message', `Spectator ${player.name} left the room!`)
 			delete this.spectators[player.id]
 		}
 	}
@@ -65,12 +73,29 @@ export default class RoomController {
 	}
 
 	closeRoom() {
-		io.to(this.roomID).emit('message', `Room Closed!`)
-		io.to(this.roomID).emit('room_closed')
+		this.emit('message', `Room Closed!`)
+		this.emit('room_closed')
 		this.creator.leaveRoom()
 		this.opponent?.leaveRoom()
 		this.spectatorsList.forEach(player => player.leaveRoom())
 		delete RoomController.rooms[this.roomID]
+	}
+
+	handleRename(player: Player) {
+		const { role } = player
+		if (!role || role === 'spectator' || !this.opponent) return
+
+		const toList: Player[] = [
+			role === 'creator' ? this.opponent : this.creator,
+			...this.spectatorsList,
+		]
+		toList.forEach(to => to.playerRenamed(role, player.name))
+	}
+
+	startGame() {
+		if (!this.opponent) return
+		this.playing = true
+		this.emit('game_start')
 	}
 }
 

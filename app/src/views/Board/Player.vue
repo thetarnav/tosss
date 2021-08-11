@@ -6,14 +6,14 @@ const props = defineProps({
 })
 
 const { activePlayer, totalScore, storedScore } = BOARD.instance.refs
-const { selectedScore } = BOARD.instance
+const { selectedScore, controller } = BOARD.instance
 
 const isActive = computed(() => activePlayer.value === props.playerIndex)
 </script>
 
 <template>
 	<div class="player" :class="{ isActive, opponent: playerIndex === 1 }">
-		PLAYER {{ playerIndex }}
+		{{ controller?.playerNames[playerIndex] }}
 		<p>
 			SCORE: {{ totalScore[playerIndex]
 			}}<span v-if="isActive"> + {{ storedScore + selectedScore }}</span>

@@ -3,15 +3,14 @@ import { DeepReadonly, reactive, readonly, ToRefs, toRefs } from 'vue'
 import Dice, { DiceState } from './Dice'
 import {
 	BoardController,
-	DiceIndex,
 	diceIndexes,
-	DiceValue,
 	diceValues,
 	FullStreet,
 	PartialStreet,
 	streetScores,
 } from './types'
 import { cloneDeep, findKey, findLastKey } from 'lodash'
+import { DiceIndex, DiceValue } from '@common/types'
 
 export interface BoardState {
 	activePlayer: 0 | 1
@@ -57,7 +56,7 @@ export default class BOARD {
 		return toRefs(this.state)
 	}
 
-	private dicesList = computed<DiceState[]>(() =>
+	dicesList = computed<DiceState[]>(() =>
 		this._state.dices ? Object.values(this._state.dices) : [],
 	)
 	filteredList = (filter: (dice: DiceState) => boolean): DiceState[] => {
@@ -167,6 +166,14 @@ export default class BOARD {
 		this.mutate('street', street)
 	}
 
+	setDices(set: (index: number) => Parameters<Dice['set']>): void {
+		this.dicesList.value.forEach((dice, index) => dice.set(...set(index)))
+	}
+
+	setDice(i: number, ...values: Parameters<Dice['set']>) {
+		i >= 0 && i <= 5 && this._state.dices?.[i as DiceIndex].set(...values)
+	}
+
 	private selectedStreet = computed<PartialStreet | FullStreet | undefined>(
 		() => {
 			return this.selectedList.value.length >= 5
@@ -224,13 +231,20 @@ export default class BOARD {
 		return this.state.activePlayer
 	}
 
-	selectDice(index: DiceIndex) {
+	userSelectDice(index: DiceIndex): DiceState | undefined {
 		const dice = this._state.dices?.[index]
 
 		if (!dice || dice.isDisabled || dice.isStored) return
 
 		dice.isSelected = !dice.isSelected
 		this.disableDices(dice)
+		return dice
+	}
+
+	selectDice(index: DiceIndex, isSelected: boolean) {
+		const dice = this._state.dices?.[index]
+		if (!dice) return
+		dice.set({ isSelected })
 	}
 
 	private disableDices(selectedDice: DiceState) {
@@ -295,7 +309,7 @@ export default class BOARD {
 function randomDices(): Record<DiceIndex, DiceState> {
 	const dices = {} as Record<DiceIndex, DiceState>
 	for (const i of diceIndexes) {
-		dices[i] = new Dice(i)
+		dices[i] = new Dice()
 		// @ts-ignore
 		// dices[i].value = String(i + 2)
 	}

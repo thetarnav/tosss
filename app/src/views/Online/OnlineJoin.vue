@@ -7,20 +7,20 @@ import { onMounted } from 'vue-demi'
 const route = useRoute()
 const router = useRouter()
 
-const { roomID } = route.params,
-	joinedRoom = ref(false)
+const { roomID } = route.params
 
 const username = computed({
 	get: () => ROOM.instance.state.username,
 	set: v => ROOM.instance.rename(v),
 })
 
+const { role } = ROOM.instance.refs
+
 onMounted(async () => {
 	if (typeof roomID !== 'string') router.push('/')
 	else {
 		try {
 			await ROOM.instance.joinRoom(roomID)
-			joinedRoom.value = true
 		} catch (error) {
 			console.error(error)
 			router.push('/')
@@ -31,7 +31,12 @@ onMounted(async () => {
 
 <template>
 	<TypeUsername v-model="username" />
-	<button>Play</button>
+	<button
+		v-if="role === 'opponent'"
+		@click="() => ROOM.instance.startPlaying()"
+	>
+		Begin!
+	</button>
 </template>
 
 <style lang="postcss"></style>

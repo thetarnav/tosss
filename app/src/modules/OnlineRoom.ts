@@ -3,13 +3,16 @@ import { ClientEventsMap, ServerEventsMap } from '@common/socketEventsMap'
 import { DeepReadonly, reactive, readonly, ToRefs, toRefs } from 'vue'
 import { wait } from '@common/functions'
 import { useDebounceFn } from '@vueuse/core'
-import { JoiningRole, PlayerRole } from '@common/player'
+import { JoiningRole, PlayerRole, PlayingRole } from '@common/types'
 import router from '@/router/router'
+import initOnlineGame from '@/controllers/OnlineGame'
+import { cloneDeep } from 'lodash'
 
 export const messages = ref<string[]>([])
 
 interface State {
 	username: string
+	opponent: string
 	link: string | undefined
 	roomID: string | undefined
 	role: PlayerRole | undefined
@@ -17,6 +20,7 @@ interface State {
 
 const initialState: State = {
 	username: 'Player',
+	opponent: 'Player 2',
 	link: undefined,
 	roomID: undefined,
 	role: undefined,
@@ -24,16 +28,22 @@ const initialState: State = {
 
 export default class ROOM {
 	private static _instance: ROOM
-	private _state: State
+	private readonly _state: State
 	private socket: Socket<ServerEventsMap, ClientEventsMap>
 
 	private constructor() {
-		this._state = reactive(initialState)
+		this._state = reactive(cloneDeep(initialState))
 		this.socket = io('192.168.1.11:8080')
 
-		this.socket.on('message', message => ROOM.addMessage(message))
+		this.listen('message', message => ROOM.addMessage(message))
 
-		this.socket.on('room_closed', () => this.clearRoom())
+		this.listen('player_rename', (role, username) =>
+			this.playerRenamed(role, username),
+		)
+
+		this.listen('game_start', () => this.initGame())
+
+		this.listen('room_closed', () => this.clearRoom())
 	}
 
 	static get instance(): ROOM {
@@ -48,6 +58,26 @@ export default class ROOM {
 	}
 	get refs(): ToRefs<DeepReadonly<State>> {
 		return toRefs(this.state)
+	}
+
+	emit<T extends keyof ClientEventsMap>(
+		name: T,
+		...args: Parameters<ClientEventsMap[T]>
+	): void {
+		console.log('EMIT:', name, ...args)
+		this.socket.emit(name, ...args)
+	}
+
+	listen<T extends keyof ServerEventsMap>(
+		name: T,
+		callback: ServerEventsMap[T],
+	) {
+		// @ts-ignore
+		this.socket.on(name, (...args: Parameters<ServerEventsMap[T]>) => {
+			console.log('LISTEN:', name, ...args)
+			// @ts-ignore
+			callback(...args)
+		})
 	}
 
 	static reconnect() {
@@ -67,16 +97,31 @@ export default class ROOM {
 		ROOM.instance.mutate('username', username)
 		ROOM.emitUsername()
 	}
-	private static emitUsername = useDebounceFn(() =>
-		ROOM.instance.socket.emit('rename', ROOM.instance.state.username),
+	private static emitUsername = useDebounceFn(
+		() => ROOM.instance.emit('rename', ROOM.instance.state.username),
+		1000,
 	)
 
-	private static setRoom(roomID: string, role: PlayerRole): string {
+	playerRenamed(role: PlayingRole, username: string) {
+		if (this._state.role !== 'spectator') this._state.opponent = username
+	}
+
+	private static setRoom(
+		roomID: string,
+		role: PlayerRole,
+		opponentName?: string,
+	): string {
 		const link = window.origin + '/join/' + roomID
 		ROOM.instance.mutate('roomID', roomID)
 		ROOM.instance.mutate('link', link)
 		ROOM.instance.mutate('role', role)
+		opponentName && ROOM.instance.mutate('opponent', opponentName)
 		return link
+	}
+
+	private clearRoom(redirect = true) {
+		Object.assign(this._state, cloneDeep(initialState))
+		redirect && router.push('/')
 	}
 
 	createRoom(): Promise<string> {
@@ -84,9 +129,8 @@ export default class ROOM {
 
 		let pending = true
 		return new Promise<string>((resolve, reject) => {
-			if (this.socket.disconnected) rejection('Server disconnected.')
 			this.socket
-				.emit('create_room')
+				.emit('create_room', this._state.username)
 				.once('room_created', onRoomCreated)
 				.once('disconnect', rejection)
 
@@ -114,19 +158,18 @@ export default class ROOM {
 
 		let pending = true
 		return new Promise((resolve, reject) => {
-			if (this.socket.disconnected) rejection('Server disconnected.')
 			this.socket
-				.emit('join_room', roomID)
+				.emit('join_room', roomID, this._state.username)
 				.once('room_join_result', onResult)
 				.once('disconnect', rejection)
 
 			wait(5000).then(() => rejection('Server timeout...'))
 
-			function onResult(role: JoiningRole | false) {
+			function onResult(role: JoiningRole | false, creatorName?: string) {
 				if (!pending) return rejection('Promise was already resolved.')
 				if (!role) return rejection("Couldn't join the room.")
 				pending = false
-				ROOM.setRoom(roomID, role)
+				ROOM.setRoom(roomID, role, creatorName)
 				resolve()
 			}
 
@@ -139,10 +182,24 @@ export default class ROOM {
 		})
 	}
 
-	private clearRoom(redirect = true) {
-		this.mutate('roomID', undefined)
-		this.mutate('link', undefined)
-		this.mutate('role', undefined)
-		redirect && router.push('/')
+	/**
+	 * Method for joining player. (OPPONENT)
+	 * Will call controller constructor & notify creator player to start the game
+	 */
+	startPlaying(): void {
+		if (!this._state.opponent || this._state.role !== 'opponent') return
+		initOnlineGame('opponent')
+		this.emit('player_ready')
+		router.push({ name: 'Board' })
+	}
+
+	/**
+	 * Method for the host player (CREATOR)
+	 * Initialize online game controller as creator
+	 */
+	private initGame(): void {
+		if (!this._state.opponent || this._state.role !== 'creator') return
+		initOnlineGame('creator')
+		router.push({ name: 'Board' })
 	}
 }
