@@ -1,8 +1,9 @@
 import { random } from '@common/functions'
 import { nanoid } from 'nanoid'
-import { DiceProps, DiceValue } from '@common/types'
+import { DiceIndex, DiceProps, DiceValue } from '@common/types'
 
 export interface DiceState extends DiceProps {
+	index: DiceIndex
 	id: string
 	isDisabled: boolean
 
@@ -13,15 +14,13 @@ export interface DiceState extends DiceProps {
 export default class Dice implements DiceState {
 	public id: string
 	public value: DiceValue = '1'
-	public isSelected
-	public isStored
+	public isSelected = false
+	public isStored = false
 	public isDisabled = false
 
-	constructor(value?: DiceValue, isSelected?: boolean, isStored?: boolean) {
-		this.value = value || this.random
+	constructor(public index: DiceIndex) {
+		this.value = this.random
 		this.id = nanoid(8)
-		this.isSelected = isSelected ?? false
-		this.isStored = isStored ?? false
 	}
 
 	private get random(): DiceValue {

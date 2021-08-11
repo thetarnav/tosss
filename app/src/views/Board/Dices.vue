@@ -20,7 +20,7 @@ const select = (i: number) =>
 		:class="{ 'round-lost': controller?.turnLost }"
 	>
 		<button
-			v-for="({ id, value, isSelected, isDisabled }, index) in playableDices"
+			v-for="{ index, id, value, isSelected, isDisabled } in playableDices"
 			:key="id"
 			:class="{
 				isSelected,

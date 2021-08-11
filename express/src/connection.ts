@@ -24,9 +24,11 @@ export default function handleConnection(socket: Socket) {
 
 	socket.on('player_ready', () => player.ready())
 
-	socket.on('game_roll', dices => player.roll(dices))
+	socket.on('game_roll', player.roll.bind(player))
 
 	socket.on('game_select', (i, isSelected) => player.select(i, isSelected))
+
+	socket.on('game_turn_lost', () => player.lost())
 
 	socket.on('disconnect', () => {
 		player.leaveRoom()

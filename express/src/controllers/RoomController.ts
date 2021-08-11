@@ -36,6 +36,18 @@ export default class RoomController {
 		io.to(this.roomID).emit(name, ...args)
 	}
 
+	emitOmit<T extends keyof ServerEventsMap>(
+		omit: PlayingRole,
+		name: T,
+		...args: Parameters<ServerEventsMap[T]>
+	) {
+		const to: Player[] = [...this.spectatorsList]
+		omit === 'creator' && this.opponent
+			? to.push(this.opponent)
+			: to.push(this.creator)
+		to.forEach(({ id }) => io.to(id).emit(name, ...args))
+	}
+
 	join(player: Player): JoiningRole {
 		const { id } = player
 		if (!this.opponent) {
@@ -95,15 +107,14 @@ export default class RoomController {
 	startGame() {
 		if (!this.opponent) return
 		this.playing = true
-		this.emit('game_start')
+		this.emitOmit('opponent', 'game_start')
+	}
+
+	switchActivePlayer() {
+		this.activePlayer =
+			this.activePlayer === 'creator' ? 'opponent' : 'creator'
+	}
+	isPlayerActive(player: Player): boolean {
+		return player.role === this.activePlayer
 	}
 }
-
-setInterval(() => {
-	console.log(
-		'Sockets:',
-		io.sockets.sockets.size,
-		'Rooms:',
-		Object.keys(RoomController.rooms).length,
-	)
-}, 2000)

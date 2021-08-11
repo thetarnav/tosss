@@ -62,7 +62,7 @@ export default class BOARD {
 	filteredList = (filter: (dice: DiceState) => boolean): DiceState[] => {
 		return this.dicesList.value.filter(filter)
 	}
-	private selectedList = computed<DiceState[]>(() =>
+	selectedList = computed<DiceState[]>(() =>
 		this.filteredList(dice => dice.isSelected),
 	)
 	freeList = computed<DiceState[]>(() =>
@@ -167,7 +167,21 @@ export default class BOARD {
 	}
 
 	setDices(set: (index: number) => Parameters<Dice['set']>): void {
-		this.dicesList.value.forEach((dice, index) => dice.set(...set(index)))
+		if (this._state.dices)
+			this.dicesList.value.forEach((dice, index) => dice.set(...set(index)))
+		else {
+			// if "dices" are undefined
+			// create new set of dices, and assign them to the board state
+			const dices = {} as Record<DiceIndex, DiceState>
+			for (const i of diceIndexes) {
+				dices[i] = new Dice(i)
+				dices[i].set(...set(i))
+			}
+			this._state.dices = dices
+
+			const street = this.checkStreet(this.freeList.value)
+			this.mutate('street', street)
+		}
 	}
 
 	setDice(i: number, ...values: Parameters<Dice['set']>) {
@@ -309,11 +323,8 @@ export default class BOARD {
 function randomDices(): Record<DiceIndex, DiceState> {
 	const dices = {} as Record<DiceIndex, DiceState>
 	for (const i of diceIndexes) {
-		dices[i] = new Dice()
-		// @ts-ignore
-		// dices[i].value = String(i + 2)
+		dices[i] = new Dice(i)
 	}
-	// dices[5].value = '5'
 	return dices
 }
 

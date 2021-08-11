@@ -13,7 +13,6 @@ export default class Player {
 	name: string = 'Player'
 	room?: RoomController
 	role?: PlayerRole
-	isActive = false
 
 	get isPlaying(): boolean {
 		return this.role === 'opponent' || this.role === 'creator'
@@ -46,7 +45,6 @@ export default class Player {
 		this.socket.join(room.roomID)
 		this.socket.emit('message', `Online Room ${room.roomID} created!`)
 		this.role = 'creator'
-		this.isActive = true
 		return room.roomID
 	}
 
@@ -73,11 +71,29 @@ export default class Player {
 		if (this.role === 'opponent') this.room?.startGame()
 	}
 
-	roll(dices: DiceProps[]) {
-		this.isActive && this.room?.emit('game_roll', dices)
+	roll(dices: DiceProps[], storedScore: number) {
+		this.room?.isPlayerActive(this) &&
+			this.room.emitOmit(
+				this.room.activePlayer,
+				'game_roll',
+				dices,
+				storedScore,
+			)
 	}
 
 	select(index: DiceIndex, isSelected: boolean) {
-		this.isActive && this.room?.emit('game_select', index, isSelected)
+		this.room?.isPlayerActive(this) &&
+			this.room.emitOmit(
+				this.room.activePlayer,
+				'game_select',
+				index,
+				isSelected,
+			)
+	}
+
+	lost() {
+		if (!this.room?.isPlayerActive(this)) return
+		this.room.emitOmit(this.room.activePlayer, 'game_turn_lost')
+		this.room.switchActivePlayer()
 	}
 }

@@ -5,8 +5,10 @@ export interface ClientEventsMap {
 	create_room: (username: string) => void
 	join_room: (roomID: string, username: string) => void
 	player_ready: () => void
-	game_roll: (dices: DiceProps[]) => void
+	game_roll: (dices: DiceProps[], storedScore: number) => void
 	game_select: (index: DiceIndex, isSelected: boolean) => void
+	game_turn_lost: () => void
+	game_turn_scored: (totalScore: number) => void
 }
 
 export interface ServerEventsMap {
@@ -18,6 +20,8 @@ export interface ServerEventsMap {
 	room_closed: () => void
 	player_rename: (role: PlayingRole, username: string) => void
 	game_start: () => void
-	game_roll: (dices: DiceProps[]) => void
+	game_roll: (dices: DiceProps[], storedScore: number) => void
 	game_select: (index: DiceIndex, isSelected: boolean) => void
+	game_turn_lost: () => void
+	game_turn_scored: (totalScore: number) => void
 }

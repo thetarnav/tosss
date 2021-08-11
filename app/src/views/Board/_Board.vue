@@ -7,6 +7,7 @@ import { onBeforeMount } from 'vue'
 
 const router = useRouter()
 const { controller } = BOARD.instance
+const instance = BOARD.instance
 
 onBeforeMount(() => {
 	if (!controller) router.push('/')
