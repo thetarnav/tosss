@@ -15,8 +15,7 @@ export default class RoomController {
 	opponent?: Player
 	readonly spectators: Record<string, Player> = {}
 
-	playing = false
-	activePlayer: PlayingRole = 'creator'
+	activePlayer: PlayingRole | undefined = undefined
 
 	constructor(player: Player) {
 		this.roomID = nanoid(10)
@@ -37,12 +36,12 @@ export default class RoomController {
 	}
 
 	emitOmit<T extends keyof ServerEventsMap>(
-		omit: PlayingRole,
+		omit: PlayingRole | undefined,
 		name: T,
 		...args: Parameters<ServerEventsMap[T]>
 	) {
 		const to: Player[] = [...this.spectatorsList]
-		omit === 'creator' && this.opponent
+		omit && omit === 'creator' && this.opponent
 			? to.push(this.opponent)
 			: to.push(this.creator)
 		to.forEach(({ id }) => io.to(id).emit(name, ...args))
@@ -106,7 +105,7 @@ export default class RoomController {
 
 	startGame() {
 		if (!this.opponent) return
-		this.playing = true
+		this.activePlayer = 'creator'
 		this.emitOmit('opponent', 'game_start')
 	}
 
@@ -116,5 +115,10 @@ export default class RoomController {
 	}
 	isPlayerActive(player: Player): boolean {
 		return player.role === this.activePlayer
+	}
+
+	gameWon(totalScore: number) {
+		this.emitOmit(this.activePlayer, 'game_won', totalScore)
+		this.activePlayer = undefined
 	}
 }

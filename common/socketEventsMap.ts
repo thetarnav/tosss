@@ -9,6 +9,7 @@ export interface ClientEventsMap {
 	game_select: (index: DiceIndex, isSelected: boolean) => void
 	game_turn_lost: () => void
 	game_turn_scored: (totalScore: number) => void
+	game_won: (totalScore: number) => void
 }
 
 export interface ServerEventsMap {
@@ -24,4 +25,5 @@ export interface ServerEventsMap {
 	game_select: (index: DiceIndex, isSelected: boolean) => void
 	game_turn_lost: () => void
 	game_turn_scored: (totalScore: number) => void
+	game_won: (totalScore: number) => void
 }

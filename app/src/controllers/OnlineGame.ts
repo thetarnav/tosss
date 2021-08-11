@@ -1,4 +1,5 @@
 import BOARD, { PublicBoardState } from '@/modules/Board'
+import summonModal from '@/modules/modal/modalController'
 import ROOM from '@/modules/OnlineRoom'
 import { BoardController, streetScores } from '@/modules/types'
 import { DiceIndex, DiceProps, PlayingRole } from '@common/types'
@@ -24,13 +25,15 @@ class OnlineController implements BoardController {
 			this.emitRoll()
 		} else {
 			BOARD.instance.rollDices(true)
-			BOARD.instance.switchActivePlayer()
+			BOARD.instance.switchActivePlayer(1)
 			this.actionsDisabled = true
 		}
 
 		ROOM.instance.listen('game_roll', this.handleRoll.bind(this))
 		ROOM.instance.listen('game_select', this.handleSelect.bind(this))
 		ROOM.instance.listen('game_turn_lost', this.handleLost.bind(this))
+		ROOM.instance.listen('game_turn_scored', this.handleTurnScored.bind(this))
+		ROOM.instance.listen('game_won', this.handleOpponentWon.bind(this))
 	}
 
 	get playerNames(): [string, string] {
@@ -95,6 +98,31 @@ class OnlineController implements BoardController {
 		BOARD.instance.mutate('storedScore', storedScore)
 	}
 
+	take() {
+		if (this.takeDisabled) return
+
+		// Add stored & selected points to player's total
+		const totalScore = BOARD.instance.addTotalScore()
+		BOARD.instance.mutate('dices', undefined)
+
+		// Check if player won
+		if (totalScore >= 2000) return this.IWin(totalScore)
+
+		// Switch sides
+		BOARD.instance.switchActivePlayer(1)
+		ROOM.instance.emit('game_turn_scored', totalScore)
+	}
+
+	handleTurnScored(total: number) {
+		BOARD.instance.mutate('totalScore', a => [a[0], total])
+		BOARD.instance.mutate('storedScore', 0)
+		BOARD.instance.rollDices(true)
+		BOARD.instance.switchActivePlayer(0)
+		this.actionsDisabled = false
+		this.emitRoll()
+		this.checkTurnLost()
+	}
+
 	private checkTurnLost() {
 		!BOARD.instance.isPlayable.value && this.onTurnLost()
 	}
@@ -106,7 +134,7 @@ class OnlineController implements BoardController {
 		ROOM.instance.emit('game_turn_lost')
 		setTimeout(() => {
 			BOARD.instance.mutate('dices', undefined)
-			BOARD.instance.switchActivePlayer()
+			BOARD.instance.switchActivePlayer(1)
 			this.turnLost = false
 		}, 1500)
 	}
@@ -118,11 +146,55 @@ class OnlineController implements BoardController {
 		BOARD.instance.mutate('storedScore', 0)
 		setTimeout(() => {
 			BOARD.instance.rollDices(true)
-			BOARD.instance.switchActivePlayer()
+			BOARD.instance.switchActivePlayer(0)
 			this.turnLost = false
 			this.actionsDisabled = false
 			this.emitRoll()
 			this.checkTurnLost()
 		}, 1500)
+	}
+
+	private IWin(totalScore: number) {
+		this.actionsDisabled = true
+		ROOM.instance.emit('game_won', totalScore)
+		summonModal({
+			title: this.playerNames[0],
+			text: 'won this round!',
+			closable: false,
+			fireworks: true,
+			buttons: [
+				{
+					text: 'Quit',
+					action: () => console.log('quit'),
+				},
+				{
+					text: 'Play Again!',
+					action: () => console.log('play again'),
+				},
+			],
+		})
+	}
+
+	private handleOpponentWon(total: number) {
+		this.actionsDisabled = true
+		BOARD.instance.mutate('dices', undefined)
+		BOARD.instance.mutate('storedScore', 0)
+		BOARD.instance.mutate('totalScore', a => [a[0], total])
+		summonModal({
+			title: this.playerNames[1],
+			text: 'won this round!',
+			closable: false,
+			fireworks: true,
+			buttons: [
+				{
+					text: 'Quit',
+					action: () => console.log('quit'),
+				},
+				{
+					text: 'Play Again!',
+					action: () => console.log('play again'),
+				},
+			],
+		})
 	}
 }

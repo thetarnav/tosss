@@ -53,14 +53,10 @@ class HotseatController implements BoardController {
 		if (this.takeDisabled) return
 
 		// Add stored & selected points to player's total
-		BOARD.instance.addTotalScore()
+		const totalScore = BOARD.instance.addTotalScore()
 
 		// Check if player won
-		{
-			const { activePlayer, totalScore } = this.boardState
-			if (totalScore[activePlayer] >= 2000)
-				return this.playerWon(activePlayer)
-		}
+		if (totalScore >= 2000) return this.playerWon()
 
 		// Switch sides
 		BOARD.instance.rollDices(true)
@@ -81,11 +77,11 @@ class HotseatController implements BoardController {
 		}, 1500)
 	}
 
-	private playerWon(playerIndex: 0 | 1) {
+	private playerWon() {
 		this.actionsDisabled = true
 		BOARD.instance.mutate('dices', undefined)
 		summonModal({
-			title: 'Player ' + playerIndex,
+			title: 'Player ' + BOARD.instance.state.activePlayer,
 			text: 'won this round!',
 			closable: false,
 			fireworks: true,

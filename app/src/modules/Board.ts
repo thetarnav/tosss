@@ -46,8 +46,13 @@ export default class BOARD {
 		return BOARD._instance
 	}
 
-	mutate<K extends keyof BoardState>(key: K, val: BoardState[K]): void {
-		this._state[key] = val
+	mutate<K extends keyof BoardState>(
+		key: K,
+		mutation: ((val: BoardState[K]) => BoardState[K]) | BoardState[K],
+	): void {
+		if (typeof mutation === 'function')
+			this._state[key] = mutation(this._state[key])
+		else this._state[key] = mutation
 	}
 	get state(): PublicBoardState {
 		return readonly(this._state)
@@ -240,8 +245,8 @@ export default class BOARD {
 			}
 	}
 
-	switchActivePlayer(): 0 | 1 {
-		this.mutate('activePlayer', this.state.activePlayer ? 0 : 1)
+	switchActivePlayer(player?: 0 | 1): 0 | 1 {
+		this.mutate('activePlayer', player ?? (this.state.activePlayer ? 0 : 1))
 		return this.state.activePlayer
 	}
 
@@ -308,11 +313,12 @@ export default class BOARD {
 		})
 	}
 
-	addTotalScore() {
+	addTotalScore(): number {
 		const state = this._state
 		state.totalScore[state.activePlayer] +=
 			state.storedScore + this.selectedScore.value
 		state.storedScore = 0
+		return state.totalScore[state.activePlayer]
 	}
 
 	fullClear() {

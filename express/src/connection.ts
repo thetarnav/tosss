@@ -30,6 +30,10 @@ export default function handleConnection(socket: Socket) {
 
 	socket.on('game_turn_lost', () => player.lost())
 
+	socket.on('game_turn_scored', player.scored.bind(player))
+
+	socket.on('game_won', player.won.bind(player))
+
 	socket.on('disconnect', () => {
 		player.leaveRoom()
 	})

@@ -14,10 +14,6 @@ export default class Player {
 	room?: RoomController
 	role?: PlayerRole
 
-	get isPlaying(): boolean {
-		return this.role === 'opponent' || this.role === 'creator'
-	}
-
 	constructor(private socket: Socket) {
 		this.id = socket.id
 	}
@@ -95,5 +91,16 @@ export default class Player {
 		if (!this.room?.isPlayerActive(this)) return
 		this.room.emitOmit(this.room.activePlayer, 'game_turn_lost')
 		this.room.switchActivePlayer()
+	}
+
+	scored(totalScore: number) {
+		if (!this.room?.isPlayerActive(this)) return
+		this.room.emitOmit(this.room.activePlayer, 'game_turn_scored', totalScore)
+		this.room.switchActivePlayer()
+	}
+
+	won(totalScore: number) {
+		if (!this.room?.isPlayerActive(this)) return
+		this.room.gameWon(totalScore)
 	}
 }
