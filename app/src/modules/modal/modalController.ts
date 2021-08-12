@@ -1,3 +1,4 @@
+import { removeFromArray } from '@common/functions'
 import { createApp } from 'vue'
 import Modal from './Modal.vue'
 
@@ -12,6 +13,12 @@ interface SummonOptions {
 	closable?: boolean
 	fireworks?: boolean
 	buttons?: ButtonType[]
+}
+
+const modals:Function[] = []
+
+export function closeAllModals(){
+	modals.forEach(close => close())
 }
 
 export default function summonModal({
@@ -36,5 +43,10 @@ export default function summonModal({
 	function close() {
 		app.unmount()
 		container.remove()
+		removeFromArray(modals, close)
 	}
+
+	modals.push(close)
+
+	return close
 }

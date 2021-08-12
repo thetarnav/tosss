@@ -7,6 +7,7 @@ import { JoiningRole, PlayerRole, PlayingRole } from '@common/types'
 import router from '@/router/router'
 import initOnlineGame from '@/controllers/OnlineGame'
 import { cloneDeep } from 'lodash'
+import { closeAllModals } from './modal/modalController'
 
 export const messages = ref<string[]>([])
 
@@ -124,7 +125,10 @@ export default class ROOM {
 
 	private clearRoom(redirect = true) {
 		Object.assign(this._state, cloneDeep(initialState))
-		redirect && router.push('/')
+		if (redirect) {
+			closeAllModals()
+			router.push('/')
+		}
 	}
 
 	createRoom(): Promise<string> {

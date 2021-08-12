@@ -39,6 +39,10 @@ export function filterDuplicates(iterable: any[] | string): any {
 	return isString ? result.join('') : result
 }
 
+export function removeFromArray<T>(array: T[], item: T): T[] {
+	return array.splice(array.indexOf(item), 1)
+}
+
 export const keyLookup = <T extends Record<string, any>, K extends keyof T>(
 	list: T[],
 	key: K,
