@@ -16,6 +16,7 @@ export default class RoomController {
 	readonly spectators: Record<string, Player> = {}
 
 	activePlayer: PlayingRole | undefined = undefined
+	playersReady: [boolean, boolean] = [true, false]
 
 	constructor(player: Player) {
 		this.roomID = nanoid(10)
@@ -103,10 +104,18 @@ export default class RoomController {
 		toList.forEach(to => to.playerRenamed(role, player.name))
 	}
 
-	startGame() {
-		if (!this.opponent) return
-		this.activePlayer = 'creator'
-		this.emitOmit('opponent', 'game_start')
+	playerReady(player: Player) {
+		if (!this.opponent || !player.role || player.role === 'spectator') return
+
+		if (player.role === 'creator') this.playersReady[0] = true
+		else this.playersReady[1] = true
+
+		// start the game if players are both ready
+		if (this.playersReady[0] === true && this.playersReady[1] === true) {
+			this.activePlayer = 'creator'
+			this.playersReady = [false, false]
+			this.emit('game_start')
+		}
 	}
 
 	switchActivePlayer() {

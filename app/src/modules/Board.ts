@@ -301,13 +301,10 @@ export default class BOARD {
 	 * - Turns selected dices into stored ones
 	 */
 	storeSelected() {
-		const selectedList = this.selectedList.value,
-			chain = this.unfinishedChain.value
-
-		if (chain) return
+		if (this.disabled.value) return
 
 		this._state.storedScore += this.selectedScore.value
-		selectedList.forEach(dice => {
+		this.selectedList.value.forEach(dice => {
 			dice.isStored = dice.isSelected || dice.isStored
 			dice.isSelected = false
 		})

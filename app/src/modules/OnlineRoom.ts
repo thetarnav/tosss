@@ -16,6 +16,7 @@ interface State {
 	link: string | undefined
 	roomID: string | undefined
 	role: PlayerRole | undefined
+	awaitingStart: boolean
 }
 
 const initialState: State = {
@@ -24,6 +25,7 @@ const initialState: State = {
 	link: undefined,
 	roomID: undefined,
 	role: undefined,
+	awaitingStart: false,
 }
 
 export default class ROOM {
@@ -41,7 +43,7 @@ export default class ROOM {
 			this.playerRenamed(role, username),
 		)
 
-		this.listen('game_start', () => this.initGame())
+		this.listen('game_start', () => this.handleGameStart())
 
 		this.listen('room_closed', () => this.clearRoom())
 	}
@@ -116,6 +118,7 @@ export default class ROOM {
 		ROOM.instance.mutate('link', link)
 		ROOM.instance.mutate('role', role)
 		opponentName && ROOM.instance.mutate('opponent', opponentName)
+		if (role === 'creator') this.instance.mutate('awaitingStart', true)
 		return link
 	}
 
@@ -182,6 +185,19 @@ export default class ROOM {
 		})
 	}
 
+	private handleGameStart(): void {
+		const { awaitingStart, role, opponent } = this._state
+		if (
+			opponent &&
+			awaitingStart &&
+			(role === 'creator' || role === 'opponent')
+		) {
+			this.mutate('awaitingStart', false)
+			initOnlineGame(role)
+			router.push({ name: 'Board' })
+		}
+	}
+
 	/**
 	 * Method for joining player. (OPPONENT)
 	 * Will call controller constructor & notify creator player to start the game
@@ -190,16 +206,6 @@ export default class ROOM {
 		if (!this._state.opponent || this._state.role !== 'opponent') return
 		initOnlineGame('opponent')
 		this.emit('player_ready')
-		router.push({ name: 'Board' })
-	}
-
-	/**
-	 * Method for the host player (CREATOR)
-	 * Initialize online game controller as creator
-	 */
-	private initGame(): void {
-		if (!this._state.opponent || this._state.role !== 'creator') return
-		initOnlineGame('creator')
 		router.push({ name: 'Board' })
 	}
 }

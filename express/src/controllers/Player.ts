@@ -64,7 +64,8 @@ export default class Player {
 	}
 
 	ready() {
-		if (this.role === 'opponent') this.room?.startGame()
+		if (!this.role || this.role === 'spectator') return
+		this.room?.playerReady(this)
 	}
 
 	roll(dices: DiceProps[], storedScore: number) {

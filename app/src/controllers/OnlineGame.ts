@@ -2,6 +2,7 @@ import BOARD, { PublicBoardState } from '@/modules/Board'
 import summonModal from '@/modules/modal/modalController'
 import ROOM from '@/modules/OnlineRoom'
 import { BoardController, streetScores } from '@/modules/types'
+import router from '@/router/router'
 import { DiceIndex, DiceProps, PlayingRole } from '@common/types'
 
 export default function initOnlineGame(role: PlayingRole) {
@@ -14,7 +15,7 @@ class OnlineController implements BoardController {
 
 	turnLost = false
 
-	constructor(private role: PlayingRole) {
+	constructor(role: PlayingRole) {
 		BOARD.instance.fullClear()
 		this.boardState = BOARD.instance.state
 
@@ -42,10 +43,18 @@ class OnlineController implements BoardController {
 	}
 
 	get rollDisabled() {
-		return BOARD.instance.disabled.value || this.actionsDisabled
+		return (
+			BOARD.instance.disabled.value ||
+			this.actionsDisabled ||
+			!this.isPlayerActive
+		)
 	}
 	get takeDisabled() {
-		return BOARD.instance.disabled.value || this.actionsDisabled
+		return (
+			BOARD.instance.disabled.value ||
+			this.actionsDisabled ||
+			!this.isPlayerActive
+		)
 	}
 
 	private get isPlayerActive(): boolean {
@@ -157,6 +166,7 @@ class OnlineController implements BoardController {
 	private IWin(totalScore: number) {
 		this.actionsDisabled = true
 		ROOM.instance.emit('game_won', totalScore)
+		ROOM.instance.mutate('awaitingStart', true)
 		summonModal({
 			title: this.playerNames[0],
 			text: 'won this round!',
@@ -165,17 +175,19 @@ class OnlineController implements BoardController {
 			buttons: [
 				{
 					text: 'Quit',
-					action: () => console.log('quit'),
+					action: this.quit.bind(this),
 				},
 				{
 					text: 'Play Again!',
-					action: () => console.log('play again'),
+					action: this.playAgain.bind(this),
 				},
 			],
 		})
 	}
 
 	private handleOpponentWon(total: number) {
+		if (ROOM.instance.state.awaitingStart) return
+		ROOM.instance.mutate('awaitingStart', true)
 		this.actionsDisabled = true
 		BOARD.instance.mutate('dices', undefined)
 		BOARD.instance.mutate('storedScore', 0)
@@ -188,13 +200,24 @@ class OnlineController implements BoardController {
 			buttons: [
 				{
 					text: 'Quit',
-					action: () => console.log('quit'),
+					action: this.quit.bind(this),
 				},
 				{
 					text: 'Play Again!',
-					action: () => console.log('play again'),
+					action: this.playAgain.bind(this),
 				},
 			],
 		})
+	}
+
+	private quit() {
+		router.push('/')
+		BOARD.instance.controller.value = undefined
+		BOARD.instance.fullClear()
+		ROOM.disconnect()
+	}
+
+	private playAgain() {
+		ROOM.instance.emit('player_ready')
 	}
 }
