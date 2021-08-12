@@ -3,7 +3,7 @@ import clipboardCopy from 'copy-to-clipboard-ultralight'
 import ROOM from '@/modules/OnlineRoom'
 import { useRouter } from 'vue-router'
 import TypeUsername from '@/components/TypeUsername.vue'
-import { onMounted } from 'vue-demi'
+import { onMounted } from 'vue'
 
 const router = useRouter()
 

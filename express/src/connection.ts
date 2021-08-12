@@ -13,10 +13,26 @@ export default function handleConnection(socket: Socket) {
 		socket.emit('room_created', roomID)
 	})
 
-	socket.on('join_room', roomID => {
-		const result = player.joinRoom(roomID)
-		socket.emit('room_join_result', result)
+	socket.on('join_room', (roomID, username) => {
+		const result = player.joinRoom(roomID, username)
+		result
+			? socket.emit('room_join_result', result.role, result.creatorUsername)
+			: socket.emit('room_join_result', false)
 	})
+
+	socket.on('rename', name => player.rename(name))
+
+	socket.on('player_ready', () => player.ready())
+
+	socket.on('game_roll', player.roll.bind(player))
+
+	socket.on('game_select', (i, isSelected) => player.select(i, isSelected))
+
+	socket.on('game_turn_lost', () => player.lost())
+
+	socket.on('game_turn_scored', player.scored.bind(player))
+
+	socket.on('game_won', player.won.bind(player))
 
 	socket.on('disconnect', () => {
 		player.leaveRoom()

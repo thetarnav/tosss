@@ -3,15 +3,14 @@ import { DeepReadonly, reactive, readonly, ToRefs, toRefs } from 'vue'
 import Dice, { DiceState } from './Dice'
 import {
 	BoardController,
-	DiceIndex,
 	diceIndexes,
-	DiceValue,
 	diceValues,
 	FullStreet,
 	PartialStreet,
 	streetScores,
 } from './types'
 import { cloneDeep, findKey, findLastKey } from 'lodash'
+import { DiceIndex, DiceValue } from '@common/types'
 
 export interface BoardState {
 	activePlayer: 0 | 1
@@ -47,8 +46,13 @@ export default class BOARD {
 		return BOARD._instance
 	}
 
-	mutate<K extends keyof BoardState>(key: K, val: BoardState[K]): void {
-		this._state[key] = val
+	mutate<K extends keyof BoardState>(
+		key: K,
+		mutation: ((val: BoardState[K]) => BoardState[K]) | BoardState[K],
+	): void {
+		if (typeof mutation === 'function')
+			this._state[key] = mutation(this._state[key])
+		else this._state[key] = mutation
 	}
 	get state(): PublicBoardState {
 		return readonly(this._state)
@@ -57,13 +61,13 @@ export default class BOARD {
 		return toRefs(this.state)
 	}
 
-	private dicesList = computed<DiceState[]>(() =>
+	dicesList = computed<DiceState[]>(() =>
 		this._state.dices ? Object.values(this._state.dices) : [],
 	)
 	filteredList = (filter: (dice: DiceState) => boolean): DiceState[] => {
 		return this.dicesList.value.filter(filter)
 	}
-	private selectedList = computed<DiceState[]>(() =>
+	selectedList = computed<DiceState[]>(() =>
 		this.filteredList(dice => dice.isSelected),
 	)
 	freeList = computed<DiceState[]>(() =>
@@ -167,6 +171,28 @@ export default class BOARD {
 		this.mutate('street', street)
 	}
 
+	setDices(set: (index: number) => Parameters<Dice['set']>): void {
+		if (this._state.dices)
+			this.dicesList.value.forEach((dice, index) => dice.set(...set(index)))
+		else {
+			// if "dices" are undefined
+			// create new set of dices, and assign them to the board state
+			const dices = {} as Record<DiceIndex, DiceState>
+			for (const i of diceIndexes) {
+				dices[i] = new Dice(i)
+				dices[i].set(...set(i))
+			}
+			this._state.dices = dices
+
+			const street = this.checkStreet(this.freeList.value)
+			this.mutate('street', street)
+		}
+	}
+
+	setDice(i: number, ...values: Parameters<Dice['set']>) {
+		i >= 0 && i <= 5 && this._state.dices?.[i as DiceIndex].set(...values)
+	}
+
 	private selectedStreet = computed<PartialStreet | FullStreet | undefined>(
 		() => {
 			return this.selectedList.value.length >= 5
@@ -219,18 +245,25 @@ export default class BOARD {
 			}
 	}
 
-	switchActivePlayer(): 0 | 1 {
-		this.mutate('activePlayer', this.state.activePlayer ? 0 : 1)
+	switchActivePlayer(player?: 0 | 1): 0 | 1 {
+		this.mutate('activePlayer', player ?? (this.state.activePlayer ? 0 : 1))
 		return this.state.activePlayer
 	}
 
-	selectDice(index: DiceIndex) {
+	userSelectDice(index: DiceIndex): DiceState | undefined {
 		const dice = this._state.dices?.[index]
 
 		if (!dice || dice.isDisabled || dice.isStored) return
 
 		dice.isSelected = !dice.isSelected
 		this.disableDices(dice)
+		return dice
+	}
+
+	selectDice(index: DiceIndex, isSelected: boolean) {
+		const dice = this._state.dices?.[index]
+		if (!dice) return
+		dice.set({ isSelected })
 	}
 
 	private disableDices(selectedDice: DiceState) {
@@ -268,23 +301,21 @@ export default class BOARD {
 	 * - Turns selected dices into stored ones
 	 */
 	storeSelected() {
-		const selectedList = this.selectedList.value,
-			chain = this.unfinishedChain.value
-
-		if (chain) return
+		if (this.disabled.value) return
 
 		this._state.storedScore += this.selectedScore.value
-		selectedList.forEach(dice => {
+		this.selectedList.value.forEach(dice => {
 			dice.isStored = dice.isSelected || dice.isStored
 			dice.isSelected = false
 		})
 	}
 
-	addTotalScore() {
+	addTotalScore(): number {
 		const state = this._state
 		state.totalScore[state.activePlayer] +=
 			state.storedScore + this.selectedScore.value
 		state.storedScore = 0
+		return state.totalScore[state.activePlayer]
 	}
 
 	fullClear() {
@@ -296,10 +327,7 @@ function randomDices(): Record<DiceIndex, DiceState> {
 	const dices = {} as Record<DiceIndex, DiceState>
 	for (const i of diceIndexes) {
 		dices[i] = new Dice(i)
-		// @ts-ignore
-		// dices[i].value = String(i + 2)
 	}
-	// dices[5].value = '5'
 	return dices
 }
 

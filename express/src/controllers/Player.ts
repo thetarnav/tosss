@@ -1,6 +1,12 @@
 import { Socket } from '@/types/socket'
 import RoomController from './RoomController'
-import { JoiningRole, PlayerRole } from '@common/player'
+import {
+	DiceIndex,
+	DiceProps,
+	JoiningRole,
+	PlayerRole,
+	PlayingRole,
+} from '@common/types'
 
 export default class Player {
 	readonly id: string
@@ -14,6 +20,10 @@ export default class Player {
 
 	rename(name: string) {
 		this.name = name
+		this.room?.handleRename(this)
+	}
+	playerRenamed(role: PlayingRole, username: string) {
+		this.socket.emit('player_rename', role, username)
 	}
 
 	leaveRoom() {
@@ -34,15 +44,64 @@ export default class Player {
 		return room.roomID
 	}
 
-	joinRoom(roomID: string): JoiningRole | false {
+	joinRoom(
+		roomID: string,
+		playerUsername: string,
+	): false | { role: JoiningRole; creatorUsername: string } {
+		this.name = playerUsername
 		if (this.room) this.leaveRoom()
-
 		const result = RoomController.joinRoom(roomID, this)
 		if (!result) return false
 
 		this.room = result.room
 		this.role = result.role
+		this.room.handleRename(this)
 		this.socket.join(roomID)
-		return result.role
+		return {
+			role: result.role,
+			creatorUsername: this.room.creator.name,
+		}
+	}
+
+	ready() {
+		if (!this.role || this.role === 'spectator') return
+		this.room?.playerReady(this)
+	}
+
+	roll(dices: DiceProps[], storedScore: number) {
+		this.room?.isPlayerActive(this) &&
+			this.room.emitOmit(
+				this.room.activePlayer,
+				'game_roll',
+				dices,
+				storedScore,
+			)
+	}
+
+	select(index: DiceIndex, isSelected: boolean) {
+		this.room?.isPlayerActive(this) &&
+			this.room.emitOmit(
+				this.room.activePlayer,
+				'game_select',
+				index,
+				isSelected,
+			)
+	}
+
+	lost() {
+		if (!this.room?.isPlayerActive(this)) return
+		this.room.emitOmit(this.room.activePlayer, 'game_turn_lost')
+		this.room.switchActivePlayer()
+	}
+
+	scored(totalScore: number) {
+		if (!this.room?.isPlayerActive(this)) return
+		this.room.emitOmit(this.room.activePlayer, 'game_turn_scored', totalScore)
+		this.room.switchActivePlayer()
+	}
+
+	won(totalScore: number) {
+		if (!this.room?.isPlayerActive(this)) return
+		this.room.gameWon(totalScore)
 	}
 }

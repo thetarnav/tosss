@@ -1,15 +1,12 @@
 <script lang="ts" setup>
 import { messages } from '@/modules/OnlineRoom'
-import { useRoute, useRouter } from 'vue-router'
+import { useRouter } from 'vue-router'
 
-const route = useRoute()
 const router = useRouter()
 
 {
-	const routeName = route.name
-	if (routeName !== 'Join' && routeName !== 'Home') {
-		router.push('/')
-	}
+	const { pathname } = window.location
+	if (pathname !== '/' && !pathname.includes('join')) router.push('/')
 }
 </script>
 

@@ -1,7 +1,6 @@
+import { DiceIndex, DiceValue } from '@common/types'
 import { DiceState } from './Dice'
 
-export type DiceValue = '1' | '2' | '3' | '4' | '5' | '6'
-export type DiceIndex = 0 | 1 | 2 | 3 | 4 | 5
 export type GameMode = 'online' | 'hotseat'
 
 export const diceIndexes: [0, 1, 2, 3, 4, 5] = [0, 1, 2, 3, 4, 5]
@@ -33,6 +32,7 @@ export interface FullStreet {
 }
 
 export interface BoardController {
+	playerNames: [string, string]
 	turnLost: boolean
 	rollDisabled: boolean
 	takeDisabled: boolean

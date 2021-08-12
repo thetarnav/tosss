@@ -16,7 +16,7 @@ const runHotseat = () => {
 		<router-link :to="{ name: 'Online' }" class="btn">Online</router-link>
 		<!-- <router-link :to="{ name: 'Board' }" class="btn">Hotseat</router-link> -->
 		<button @click="runHotseat">Hotseat</button>
-		<button>vs AI</button>
+		<!-- <button>vs AI</button> -->
 	</nav>
 </template>
 

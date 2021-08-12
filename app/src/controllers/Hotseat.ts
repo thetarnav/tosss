@@ -1,7 +1,8 @@
 import BOARD, { PublicBoardState } from '@/modules/Board'
 import summonModal from '@/modules/modal/modalController'
-import { BoardController, DiceIndex } from '@/modules/types'
+import { BoardController } from '@/modules/types'
 import router from '@/router/router'
+import { DiceIndex } from '@common/types'
 
 export default function initHotseatGame() {
 	BOARD.instance.controller.value = new HotseatController()
@@ -12,10 +13,12 @@ class HotseatController implements BoardController {
 	private actionsDisabled = false
 
 	turnLost = false
+	playerNames: [string, string]
 
 	constructor() {
 		BOARD.instance.fullClear()
 		this.boardState = BOARD.instance.state
+		this.playerNames = ['Player 1', 'Player 2']
 		do {
 			BOARD.instance.rollDices(true)
 		} while (!BOARD.instance.isPlayable.value)
@@ -29,7 +32,7 @@ class HotseatController implements BoardController {
 	}
 
 	select(index: DiceIndex) {
-		if (!this.actionsDisabled) BOARD.instance.selectDice(index)
+		if (!this.actionsDisabled) BOARD.instance.userSelectDice(index)
 	}
 
 	roll() {
@@ -50,14 +53,10 @@ class HotseatController implements BoardController {
 		if (this.takeDisabled) return
 
 		// Add stored & selected points to player's total
-		BOARD.instance.addTotalScore()
+		const totalScore = BOARD.instance.addTotalScore()
 
 		// Check if player won
-		{
-			const { activePlayer, totalScore } = this.boardState
-			if (totalScore[activePlayer] >= 2000)
-				return this.playerWon(activePlayer)
-		}
+		if (totalScore >= 2000) return this.playerWon()
 
 		// Switch sides
 		BOARD.instance.rollDices(true)
@@ -78,11 +77,11 @@ class HotseatController implements BoardController {
 		}, 1500)
 	}
 
-	private playerWon(playerIndex: 0 | 1) {
+	private playerWon() {
 		this.actionsDisabled = true
 		BOARD.instance.mutate('dices', undefined)
 		summonModal({
-			title: 'Player ' + playerIndex,
+			title: 'Player ' + BOARD.instance.state.activePlayer,
 			text: 'won this round!',
 			closable: false,
 			fireworks: true,
