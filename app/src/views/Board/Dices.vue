@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import type { DiceIndex } from '@common/types'
 import BOARD from '@/modules/Board'
+import Dice from './Dice.vue'
 
 const { controller, dicesList } = BOARD.instance
 
@@ -16,7 +17,7 @@ const select = (i: number) =>
 		class="dices"
 		:class="{ 'round-lost': controller?.turnLost }"
 	>
-		<button
+		<Dice
 			v-for="{
 				index,
 				id,
@@ -25,17 +26,12 @@ const select = (i: number) =>
 				isDisabled,
 				isStored,
 			} in dicesList"
-			v-show="!isStored"
 			:key="id"
-			:class="{
-				isSelected,
-				isDisabled,
-			}"
-			class="dice"
-			@click="select(index)"
-		>
-			{{ value }}
-		</button>
+			:value="value"
+			:is-selected="isSelected"
+			:is-stored="isStored"
+			:is-disabled="isDisabled"
+		/>
 	</TransitionGroup>
 </template>
 
@@ -44,11 +40,11 @@ const select = (i: number) =>
 	@apply flex flex-wrap w-48 h-48 justify-center content-center;
 
 	.dice {
-		@apply w-12 h-12 m-2;
+		@apply m-2;
 		transition: transform 700ms, opacity 200ms, background-color 200ms;
 
 		&.isSelected {
-			@apply bg-yellow-200;
+			@apply bg-tan;
 		}
 		&.isDisabled {
 			@apply opacity-50 pointer-events-none cursor-default;

@@ -48,7 +48,7 @@ const handleButtonClick = (btn: ButtonType) => {
 	@apply fixed inset-0 flex justify-center items-center;
 
 	.cover {
-		@apply absolute z-10 inset-0 bg-black bg-opacity-5;
+		@apply absolute z-10 inset-0 bg-gray bg-opacity-5;
 	}
 	.modal {
 		@apply relative z-20 p-6 bg-white;

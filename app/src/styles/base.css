@@ -1,0 +1,42 @@
+body {
+	@apply m-0 p-0;
+	width: 100vw;
+	height: 100vh;
+	overflow: hidden;
+}
+body {
+	margin: 0;
+	@supports not (font-variant-ligatures: common-ligatures) {
+		font-feature-settings: 'liga' 1;
+	}
+	@supports (font-variant-ligatures: common-ligatures) {
+		font-variant-ligatures: common-ligatures;
+	}
+
+	@supports (kerning: normal) {
+		kerning: normal;
+	}
+	@supports not (kerning: normal) {
+		font-feature-settings: 'kern' 1;
+	}
+}
+
+* {
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	hanging-punctuation: first;
+	@supports (hyphens: auto) {
+		hyphens: auto;
+		hypenate-limit-chars: 6 3 2;
+		hypenate-limit-lines: 2;
+		hypenate-limit-zone: 8%;
+		hypenate-limit-last: always;
+	}
+}
+*,
+*::before,
+*::after {
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+}

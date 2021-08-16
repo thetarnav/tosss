@@ -36,6 +36,21 @@ module.exports = {
 				'clip-path': 'clip-path',
 				base: 'opacity, transform',
 			},
+			transitionTimingFunction: {
+				bouncy: 'cubic-bezier(0.51, 0.06, 0.56, 1.37)',
+			},
+		},
+		colors: {
+			transparent: 'transparent',
+			current: 'currentColor',
+			white: '#f6f6f6',
+			gray: '#515070',
+			tan: '#ffbb91',
+			salomon: ' #ff8e6e',
+		},
+		fontFamily: {
+			sans: 'Nunito, sans-serif',
+			cursive: 'Averia Sans Libre, Nunito, cursive',
 		},
 	},
 	variants: {

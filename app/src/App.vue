@@ -1,6 +1,8 @@
 <script lang="ts" setup>
 import { messages } from '@/modules/OnlineRoom'
 import { useRouter } from 'vue-router'
+import GooeyCursor from 'vue-gooey-cursor'
+import GooeyEffect from './components/GooeyEffect.vue'
 
 const router = useRouter()
 
@@ -17,6 +19,8 @@ const router = useRouter()
 		</li>
 	</ul>
 	<router-view></router-view>
+	<GooeyCursor />
+	<GooeyEffect />
 </template>
 
 <style lang="postcss">
@@ -26,6 +30,9 @@ const router = useRouter()
 }
 .server-messages {
 	@apply fixed left-4 top-4 pointer-events-none;
-	@apply font-mono text-sm opacity-70;
+	@apply text-sm opacity-70;
+}
+.gooey-cursor {
+	--color: theme('colors.gray');
 }
 </style>

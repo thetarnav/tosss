@@ -5,7 +5,7 @@ const showMenu = ref(false)
 </script>
 
 <template>
-	<button v-if="!showMenu" @click="showMenu = true">Play</button>
+	<Button v-if="!showMenu" @click="showMenu = true">Play</Button>
 	<MainMenu v-else />
 </template>
 

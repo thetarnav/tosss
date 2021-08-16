@@ -21,6 +21,10 @@ export function random(
 export const clamp = (value: number, min: number, max: number): number =>
 	Math.min(Math.max(value, min), max)
 
+export default function isNullish(val: any): boolean {
+	return [null, undefined, false].indexOf(val) !== -1
+}
+
 export const deleteRandom = (array: any[]): boolean =>
 	array.splice(random(0, array.length, 'floor'), 1).length > 0
 

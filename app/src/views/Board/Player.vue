@@ -28,7 +28,7 @@ const isActive = computed(() => activePlayer.value === props.playerIndex)
 	}
 
 	&.isActive {
-		@apply bg-yellow-100;
+		@apply bg-tan;
 	}
 }
 </style>
